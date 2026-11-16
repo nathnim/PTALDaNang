@@ -146,7 +146,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
     <h3>Kết nối Apps Script</h3>
     <div class="box">
       <label class="hint" for="apiUrl">URL Web App (kết thúc bằng /exec)</label>
-      <input type="text" id="apiUrl" placeholder="https://script.google.com/macros/s/AKfycbxGwvrmhqwUJJB4kakOCxrqU0v_VUTS4SSxI5tTLJiREmMAPBvgwBtovSn6NtVg9Ifh/exec">
+      <input type="text" id="apiUrl" placeholder="https://script.google.com/macros/s/…/exec">
       <div class="row"><button class="b p" id="btnConnect">Kết nối</button><span id="pingres" class="hint" style="margin:0"></span></div>
       <p class="hint">URL được nhớ trên trình duyệt này. Có thể đặt sẵn trong mã (hằng <code>API_URL</code>) hoặc mở trang với <code>?api=URL</code>.</p>
     </div>
@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * Giao diện PTAL Đà Nẵng — chỉ hiển thị; dữ liệu & mô hình chạy trên
  * Google Apps Script (Web App gắn với Google Sheet).
  * ========================================================================= */
-const API_URL = '';   // ← dán URL Web App (…/exec) vào đây để người dùng không phải nhập
+const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQtWpzAFQAMGXXKhSbu4z4nFgzA9aXUsNEahnYddNUpcenUDJlkqtC-S_6nVJLEp-jfwX6sFNYSSPckRO3gNDC3w4WmrBPE3MO1XAEYU49gfzeH6tTDKS4KJ0f1PXDCFDtXKcnWkgpdHzsIpd24Y5fP8k41zEOcmiOUp4ZLOCwIyXsu-1LZQomdKBZtxLxFgKEciqXMi5ac28DXbSoKjlezn_eANSmrTIzfugW8ojzCW1T9M1cEEOkAEAPqpbcYRGJcKQ9ctAV3eCB_LeODYse29jg-iA&lib=Mpls6YeIHz5dxfZgFYhqnWQz3bSe0qwll';   // ← dán URL Web App (…/exec) vào đây để người dùng không phải nhập
 
 const $ = (id) => document.getElementById(id);
 const I18N = window.PTAL_I18N || { tr: s => s, locale: () => 'vi-VN', lang: 'vi' };
