@@ -435,6 +435,9 @@ const EXACT = {
   'Máy chủ trả về dữ liệu không phải JSON — kiểm tra quyền truy cập Web App ("Bất kỳ ai").': 'The server did not return JSON — check the Web App access setting ("Anyone").',
   'Trang "TienIch" trên Sheet đang trống — dùng menu PTAL → Nhập tiện ích.': 'The "TienIch" sheet is empty — use PTAL menu → Import facilities.',
   // lỗi từ máy chủ
+  'Không gọi được máy chủ Apps Script. Kiểm tra: (1) Web App triển khai với quyền truy cập "Bất kỳ ai"; (2) URL là bản /exec (không phải /dev); (3) đã chọn "Phiên bản mới" khi triển khai lại.': 'Cannot reach the Apps Script server. Check: (1) the Web App is deployed with access "Anyone"; (2) the URL is the /exec version (not /dev); (3) "New version" was selected when redeploying.',
+  'Đây là link kết quả tạm thời (googleusercontent…/echo), không phải URL Web App. Hãy lấy URL dạng https://script.google.com/macros/s/…/exec trong Apps Script → Triển khai → Quản lý triển khai.': 'This is a temporary result link (googleusercontent…/echo), not the Web App URL. Use the https://script.google.com/macros/s/…/exec URL from Apps Script → Deploy → Manage deployments.',
+  'Máy chủ không trả về dữ liệu mạng lưới — kiểm tra URL Web App và bản triển khai mới nhất của Code.gs.': 'The server did not return network data — check the Web App URL and that the latest Code.gs is deployed.',
   'Sai khoá quản trị.': 'Wrong admin key.', 'Chưa đặt khoá quản trị (menu PTAL → Đặt khoá quản trị).': 'Admin key not set (PTAL menu → Set admin key).',
   'Không có tuyến nào đang bật.': 'No route is enabled.', 'Vùng nghiên cứu không hợp lệ.': 'Invalid study area.', 'Thiếu tên kịch bản.': 'Missing scenario name.',
   'Không có chuyến nào trong khung giờ đã chọn.': 'No trips in the selected time window.', 'Thiếu tệp GTFS.': 'Missing GTFS file.', 'Toạ độ không hợp lệ.': 'Invalid coordinates.', 'Quá nhiều tuỳ chỉnh tuyến.': 'Too many route overrides.', 'Quá nhiều điểm dừng giả định.': 'Too many scenario stops.', 'Không có kịch bản này.': 'Scenario not found.',
@@ -590,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * Giao diện PTAL Đà Nẵng — chỉ hiển thị; dữ liệu & mô hình chạy trên
  * Google Apps Script (Web App gắn với Google Sheet).
  * ========================================================================= */
-const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQtWpzAFQAMGXXKhSbu4z4nFgzA9aXUsNEahnYddNUpcenUDJlkqtC-S_6nVJLEp-jfwX6sFNYSSPckRO3gNDC3w4WmrBPE3MO1XAEYU49gfzeH6tTDKS4KJ0f1PXDCFDtXKcnWkgpdHzsIpd24Y5fP8k41zEOcmiOUp4ZLOCwIyXsu-1LZQomdKBZtxLxFgKEciqXMi5ac28DXbSoKjlezn_eANSmrTIzfugW8ojzCW1T9M1cEEOkAEAPqpbcYRGJcKQ9ctAV3eCB_LeODYse29jg-iA&lib=Mpls6YeIHz5dxfZgFYhqnWQz3bSe0qwll';   // ← dán URL Web App (…/exec) vào đây để người dùng không phải nhập
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzOyxJq2Yjo7zNLcnrYng6Yx68553ixEn1XSUeXohYXZxsRybnBqvX-K8Siki1k6beE/exec';   // ← dán URL Web App (…/exec) vào đây để người dùng không phải nhập
 
 const $ = (id) => document.getElementById(id);
 const I18N = window.PTAL_I18N || { tr: s => s, locale: () => 'vi-VN', lang: 'vi' };
@@ -620,20 +623,29 @@ const cellAt = (g, lat, lng) => { const i = Math.floor((lng - g.lng0) / g.dLng),
 const cellCenter = (g, k) => { const j = Math.floor(k / g.ncol), i = k - j * g.ncol; return [g.lat0 + (j + 0.5) * g.dLat, g.lng0 + (i + 0.5) * g.dLng]; };
 
 /* ---- API ---- */
-let API = new URLSearchParams(location.search).get('api') || store.get('ptal_api') || API_URL;
+/* Chỉ chấp nhận URL dạng https://script.google.com/macros/s/<id>/exec (bỏ phần ?action=… nếu có).
+   Link "script.googleusercontent.com/macros/echo?…" là kết quả tạm thời của một lần gọi, không dùng làm máy chủ được. */
+function cleanApi(u) {
+  const m = String(u || '').trim().match(/^https:\/\/script\.google\.com\/(?:a\/[^/]+\/)?macros\/s\/[A-Za-z0-9_-]+\/exec/);
+  return m ? m[0] : null;
+}
+let API = cleanApi(new URLSearchParams(location.search).get('api')) || cleanApi(API_URL) || cleanApi(store.get('ptal_api')) || '';
+if (store.get('ptal_api') && !cleanApi(store.get('ptal_api'))) store.set('ptal_api', null);   // xoá URL sai đã lưu
 async function apiGet(action, q) {
   if (!API) throw new Error('Chưa cấu hình URL máy chủ.');
   const u = new URL(API); u.searchParams.set('action', action);
   Object.keys(q || {}).forEach(k => u.searchParams.set(k, q[k]));
-  const r = await fetch(u.toString(), { redirect: 'follow' });
+  const r = await safeFetch(u.toString(), { redirect: 'follow' });
   return unwrap(r);
 }
 async function apiPost(body) {
   if (!API) throw new Error('Chưa cấu hình URL máy chủ.');
   // text/plain để không phát sinh yêu cầu CORS preflight (Apps Script không hỗ trợ OPTIONS)
-  const r = await fetch(API, { method: 'POST', body: JSON.stringify(body), redirect: 'follow' });
+  const r = await safeFetch(API, { method: 'POST', body: JSON.stringify(body), redirect: 'follow' });
   return unwrap(r);
 }
+const NET_ERR = 'Không gọi được máy chủ Apps Script. Kiểm tra: (1) Web App triển khai với quyền truy cập "Bất kỳ ai"; (2) URL là bản /exec (không phải /dev); (3) đã chọn "Phiên bản mới" khi triển khai lại.';
+async function safeFetch(u, o) { try { return await fetch(u, o); } catch (e) { throw new Error(NET_ERR); } }
 async function unwrap(r) {
   const t = await r.text(); let j;
   try { j = JSON.parse(t); } catch (e) { throw new Error(r.ok ? 'Máy chủ trả về dữ liệu không phải JSON — kiểm tra quyền truy cập Web App ("Bất kỳ ai").' : 'HTTP ' + r.status); }
@@ -707,8 +719,12 @@ function updateConnUi() {
   $('empty').style.display = S.net ? 'none' : 'flex';
 }
 async function connect(url) {
-  url = (url || '').trim();
-  if (!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)) { toast('URL phải là địa chỉ Web App của Google Apps Script (https://script.google.com/…/exec).', 6000); return; }
+  const raw = (url || '').trim();
+  url = cleanApi(raw);
+  if (!url) {
+    toast(/googleusercontent\.com\/macros\/echo/.test(raw) ? 'Đây là link kết quả tạm thời (googleusercontent…/echo), không phải URL Web App. Hãy lấy URL dạng https://script.google.com/macros/s/…/exec trong Apps Script → Triển khai → Quản lý triển khai.' : 'URL phải là địa chỉ Web App của Google Apps Script (https://script.google.com/…/exec).', 9000);
+    return;
+  }
   API = url; store.set('ptal_api', url);
   busy(true, 'Đang kết nối máy chủ…');
   try {
@@ -726,6 +742,7 @@ async function loadNetwork() {
   busy(true, 'Đang tải mạng lưới từ Google Sheet…');
   try {
     const n = await apiGet('network');
+    if (!Array.isArray(n.routes) || !Array.isArray(n.regions)) throw new Error('Máy chủ không trả về dữ liệu mạng lưới — kiểm tra URL Web App và bản triển khai mới nhất của Code.gs.');
     S.net = n;
     $('srvver').textContent = 'Máy chủ Apps Script phiên bản ' + n.version + '.';
     S.regions = n.regions.concat([{ k: 'view', label: 'Khung nhìn bản đồ hiện tại', bbox: null }]);
