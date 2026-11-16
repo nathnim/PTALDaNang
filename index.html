@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PTAL Đà Nẵng – Mức độ tiếp cận giao thông công cộng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --ink:#1b2430; --muted:#5b6675; --line:#dfe4ea; --bg:#f6f7f9; --panel:#ffffff;
+  --accent:#0b6e75; --accent-2:#e3f2f2; --warn:#b45309; --warn-bg:#fff4e0; --bad:#b42318;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:'Be Vietnam Pro',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:13.5px}
+#app{display:flex;height:100vh;width:100vw}
+#side{width:410px;min-width:340px;max-width:46vw;display:flex;flex-direction:column;background:var(--panel);border-right:1px solid var(--line);z-index:2}
+#map{flex:1;position:relative}
+header{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+header h1{font-size:16.5px;margin:0 0 3px;font-weight:700;letter-spacing:-.01em}
+header p{margin:0;color:var(--muted);font-size:12.3px;line-height:1.45}
+nav{display:flex;border-bottom:1px solid var(--line);padding:0 8px;gap:2px;overflow-x:auto}
+nav button{border:0;background:none;padding:10px 9px 9px;font:inherit;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+nav button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.panel{display:none;overflow:auto;flex:1;padding:12px 16px 20px}
+.panel.on{display:block}
+h3{font-size:13.5px;margin:16px 0 8px;font-weight:600}
+h3:first-child{margin-top:4px}
+.box{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:#fff}
+.box.soft{background:var(--bg);border-color:transparent}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap}
+.row label{color:var(--muted);min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 112px;gap:6px 10px;align-items:center}
+.grid2 label{color:var(--muted);font-size:12.8px}
+input[type=number],input[type=text],input[type=time],select{font:inherit;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+input[type=file]{font-size:12px;max-width:100%}
+button.b{font:inherit;font-weight:500;border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;color:var(--ink)}
+button.b:hover{border-color:#b9c2cc}
+button.p{background:var(--accent);border-color:var(--accent);color:#fff}
+button.p:hover{background:#095a60}
+button.s{padding:3px 7px;font-size:12px}
+button:disabled{opacity:.5;cursor:default}
+.hint{color:var(--muted);font-size:12.2px;line-height:1.5;margin:4px 0}
+.warn{background:var(--warn-bg);color:var(--warn);border-radius:6px;padding:7px 9px;font-size:12.3px;line-height:1.45;margin:6px 0}
+#log{font-size:12px;color:var(--muted);white-space:pre-wrap;max-height:120px;overflow:auto;margin-top:6px}
+#actionbar{border-top:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;background:#fff}
+#actionbar .st{font-size:12px;color:var(--muted);flex:1;line-height:1.35}
+#actionbar .st.dirty{color:var(--warn)}
+footer{font-size:11px;color:var(--muted);padding:7px 16px 9px;border-top:1px solid var(--line);line-height:1.45}
+table{border-collapse:collapse;width:100%}
+td,th{padding:4px 5px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;font-size:12.5px}
+th{font-weight:600;color:var(--muted);font-size:11.8px;position:sticky;top:0;background:#fff}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+#rtable td input[type=number]{width:58px;padding:3px 4px}
+#rtable td select{width:auto;padding:3px 2px;font-size:12px}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.rname{cursor:pointer;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
+.rname:hover{text-decoration:underline}
+.flag{font-size:10.5px;color:var(--warn);display:block}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.card{background:var(--bg);border-radius:8px;padding:9px 10px}
+.card .v{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+.card .l{font-size:11.5px;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{flex:1;border:0;background:#fff;font:inherit;font-size:12.2px;padding:6px 4px;cursor:pointer;color:var(--muted)}
+#langsw button{padding:4px 9px;font-size:11.5px;font-weight:600}
+.seg button.on{background:var(--accent-2);color:var(--accent);font-weight:600}
+.legend{position:absolute;right:12px;bottom:24px;z-index:500;background:rgba(255,255,255,.95);border-radius:8px;padding:9px 11px;box-shadow:0 1px 4px rgba(0,0,0,.18);font-size:12px;max-width:240px}
+.legend b{display:block;margin-bottom:5px;font-size:12.5px}
+.legend div{display:flex;align-items:center;gap:6px;margin:2px 0}
+.legend i{width:16px;height:11px;border-radius:2px;display:inline-block}
+#drawpanel{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:600;background:#fff;border-radius:9px;box-shadow:0 2px 10px rgba(0,0,0,.2);padding:10px 12px;display:none;width:min(560px,92%)}
+#drawpanel .row{margin:4px 0}
+#drawpanel input[type=text]{width:150px}
+#drawpanel input[type=number]{width:64px}
+#drawpanel select{width:auto}
+#empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:450;pointer-events:none}
+#empty .in{pointer-events:auto;background:rgba(255,255,255,.96);border-radius:12px;padding:20px 22px;max-width:420px;box-shadow:0 2px 14px rgba(0,0,0,.15);text-align:center}
+#empty h2{font-size:16px;margin:0 0 6px}
+#empty p{color:var(--muted);margin:0 0 12px;line-height:1.5}
+#busy{position:absolute;inset:0;background:rgba(255,255,255,.55);z-index:900;display:none;align-items:center;justify-content:center;font-weight:600}
+#busy .in{background:#fff;padding:12px 18px;border-radius:9px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+#toast{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:950;background:#1b2430;color:#fff;padding:8px 14px;border-radius:8px;font-size:12.5px;display:none;max-width:80%}
+.leaflet-image-layer.px{image-rendering:pixelated;image-rendering:crisp-edges}
+.leaflet-popup-content{margin:10px 12px;font-family:'Be Vietnam Pro',system-ui,sans-serif;font-size:12.5px}
+.pp h4{margin:0 0 4px;font-size:14px}
+.pp table td,.pp table th{font-size:11.5px;padding:3px 4px}
+.pp table th{position:static}
+.pp .pill{display:inline-block;padding:1px 7px;border-radius:9px;color:#fff;font-weight:600;margin-right:4px}
+.method p,.method li{line-height:1.55;font-size:12.8px}
+.method code{background:var(--bg);padding:1px 4px;border-radius:4px;font-size:12px}
+.method .f{background:var(--bg);border-radius:6px;padding:7px 10px;margin:6px 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.6}
+#poitable td:first-child{white-space:nowrap}
+.bar{height:9px;border-radius:2px;display:inline-block;vertical-align:middle}
+@media (max-width:760px){#app{flex-direction:column-reverse}#side{width:100%;max-width:none;height:55vh}#map{height:45vh;flex:none}}
+</style>
+</head>
+<body>
+<div id="app">
+<aside id="side">
+  <header>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <h1>PTAL Đà Nẵng</h1>
+      <div class="seg notr" id="langsw" title="Ngôn ngữ / Language" style="flex:none"><button data-l="vi" class="on">VI</button><button data-l="en">EN</button></div>
+    </div>
+    <p>Đánh giá mức độ tiếp cận giao thông công cộng theo chỉ số PTAL (Transport for London). Dữ liệu và mô hình tính chạy trên Google Sheet (Apps Script).</p>
+  </header>
+  <nav id="tabs">
+    <button data-t="data" class="on">Dữ liệu</button>
+    <button data-t="routes">Tuyến</button>
+    <button data-t="params">Tham số</button>
+    <button data-t="result">Kết quả</button>
+    <button data-t="method">Phương pháp</button>
+    <button data-t="admin">Quản trị</button>
+  </nav>
+
+  <!-- DỮ LIỆU -->
+  <section class="panel on" id="p-data">
+    <h3>Máy chủ dữ liệu</h3>
+    <div class="box">
+      <div id="conninfo" class="hint" style="margin-top:0">Chưa kết nối.</div>
+      <div class="row"><button class="b p" id="btnLoad">Tải mạng lưới từ Google Sheet</button></div>
+    </div>
+    <h3>Vùng nghiên cứu</h3>
+    <select id="region"></select>
+    <p class="hint">Mô hình chỉ tính lưới trong vùng này (khung nét đứt trên bản đồ).</p>
+    <h3>Khung giờ</h3>
+    <div class="grid2">
+      <label for="period">Giãn cách theo</label>
+      <select id="period"><option value="peak">Cao điểm</option><option value="off">Thấp điểm</option></select>
+    </div>
+    <div id="dnMissing"></div>
+    <h3>Kịch bản</h3>
+    <div class="box">
+      <div class="row"><select id="scenList" class="notr" style="flex:1"><option value="">— Kịch bản đã lưu trên Sheet —</option></select><button class="b s" id="btnScenLoad">Mở</button></div>
+      <div class="row"><input type="text" id="scenName" placeholder="Tên kịch bản" style="flex:1"><button class="b s" id="btnScenSave">Lưu lên Sheet</button><button class="b s" id="btnScenDel">Xoá</button></div>
+      <p class="hint">Lưu/xoá cần khoá quản trị (tab Quản trị). Có thể xuất/nạp tệp JSON ở tab Kết quả.</p>
+      <div class="row"><span class="hint" style="margin:0">Nạp tệp kịch bản:</span><input type="file" id="fScen" accept=".json"></div>
+    </div>
+    <div id="log"></div>
+  </section>
+
+  <!-- QUẢN TRỊ -->
+  <section class="panel" id="p-admin">
+    <h3>Kết nối Apps Script</h3>
+    <div class="box">
+      <label class="hint" for="apiUrl">URL Web App (kết thúc bằng /exec)</label>
+      <input type="text" id="apiUrl" placeholder="https://script.google.com/macros/s/AKfycbxGwvrmhqwUJJB4kakOCxrqU0v_VUTS4SSxI5tTLJiREmMAPBvgwBtovSn6NtVg9Ifh/exec">
+      <div class="row"><button class="b p" id="btnConnect">Kết nối</button><span id="pingres" class="hint" style="margin:0"></span></div>
+      <p class="hint">URL được nhớ trên trình duyệt này. Có thể đặt sẵn trong mã (hằng <code>API_URL</code>) hoặc mở trang với <code>?api=URL</code>.</p>
+    </div>
+    <h3>Khoá quản trị</h3>
+    <div class="box">
+      <input type="password" id="adminKey" placeholder="Khoá đặt trong menu PTAL của Google Sheet">
+      <label style="display:flex;gap:6px;align-items:center;font-size:12.3px;margin-top:6px"><input type="checkbox" id="rememberKey"> Nhớ khoá trên trình duyệt này</label>
+    </div>
+    <h3>Nhập GTFS vào Google Sheet</h3>
+    <div class="box">
+      <input type="file" id="fGtfs" accept=".zip">
+      <div class="grid2" style="margin-top:8px">
+        <label>Giờ bắt đầu</label><input type="time" id="tStart" value="07:00">
+        <label>Giờ kết thúc</label><input type="time" id="tEnd" value="08:00">
+        <label>Ngày trong tuần</label>
+        <select id="wday"><option value="1">Thứ Hai</option><option value="2">Thứ Ba</option><option value="3">Thứ Tư</option><option value="4">Thứ Năm</option><option value="5">Thứ Sáu</option><option value="6">Thứ Bảy</option><option value="0">Chủ Nhật</option></select>
+      </div>
+      <div class="row" style="margin-top:8px"><button class="b" id="btnGtfs">Nhập GTFS (thay mạng lưới trên Sheet)</button></div>
+      <p class="hint">Máy chủ đếm tần suất từng trạm trong khung giờ và ghi đè các trang Tuyen, Tram, HinhHoc. Nên sao lưu Sheet trước.</p>
+    </div>
+  </section>
+
+  <!-- TUYẾN -->
+  <section class="panel" id="p-routes">
+    <div class="row">
+      <button class="b p" id="btnDraw">+ Vẽ tuyến giả định</button>
+      <button class="b s" id="btnAllOn">Bật hết</button>
+      <button class="b s" id="btnAllOff">Tắt hết</button>
+      <label style="display:flex;gap:5px;align-items:center;font-size:12px"><input type="checkbox" id="showStops" checked> Điểm dừng</label>
+    </div>
+    <div class="row">
+      <input type="text" id="rfilter" placeholder="Lọc tuyến…" style="flex:1">
+    </div>
+    <div class="row" style="font-size:12.3px">
+      <span style="color:var(--muted)">Đặt giãn cách</span>
+      <input type="number" id="bulkhw" value="20" min="1" style="width:60px">
+      <span style="color:var(--muted)">phút cho</span>
+      <button class="b s" id="btnBulkUnknown">tuyến chưa có dữ liệu</button>
+      <button class="b s" id="btnBulkShown">tuyến đang hiển thị</button>
+    </div>
+    <div id="rsummary" class="hint"></div>
+    <table id="rtable"><thead><tr><th></th><th>Tuyến</th><th>Loại</th><th class="num">Giãn cách (ph)</th><th class="num">Đ.dừng</th><th></th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <!-- THAM SỐ -->
+  <section class="panel" id="p-params">
+    <h3>Lưới tính toán</h3>
+    <div class="grid2">
+      <label>Kích thước ô lưới (m)</label>
+      <select id="pcell"><option>50</option><option selected>100</option><option>200</option><option>250</option><option>500</option></select>
+    </div>
+    <h3>Đi bộ tiếp cận</h3>
+    <div class="grid2">
+      <label>Tốc độ đi bộ (m/phút)</label><input type="number" id="pwalk" value="80" step="1">
+      <label>Hệ số đường vòng (đi bộ / chim bay)</label><input type="number" id="pdet" value="1.2" step="0.05" min="1">
+      <label>Bán kính tối đa tới điểm dừng buýt (m)</label><input type="number" id="pcb" value="640" step="10">
+      <label>Bán kính tối đa tới ga đường sắt/tram (m)</label><input type="number" id="pcr" value="960" step="10">
+    </div>
+    <h3>Thời gian chờ</h3>
+    <div class="grid2">
+      <label>Hệ số tin cậy buýt (phút)</label><input type="number" id="prb" value="2" step="0.25">
+      <label>Hệ số tin cậy đường sắt (phút)</label><input type="number" id="prr" value="0.75" step="0.25">
+    </div>
+    <h3>So sánh với cách đánh giá vùng phủ</h3>
+    <div class="grid2">
+      <label>Bán kính vùng phủ quanh điểm dừng (m)</label><input type="number" id="pcov" value="300" step="10">
+    </div>
+    <p class="hint">Giá trị mặc định theo hướng dẫn PTAL của TfL (2015): 4,8 km/h, 8 phút đi bộ tới buýt, 12 phút tới đường sắt. Hệ số đường vòng thay cho việc tính khoảng cách đi bộ trên mạng lưới đường.</p>
+    <div class="row"><button class="b s" id="btnResetP">Khôi phục mặc định</button></div>
+  </section>
+
+  <!-- KẾT QUẢ -->
+  <section class="panel" id="p-result">
+    <div id="noresult" class="hint">Chưa có kết quả. Nạp dữ liệu tuyến rồi bấm <b>Tính PTAL</b>.</div>
+    <div id="resbody" style="display:none">
+      <div class="cards">
+        <div class="card"><div class="v" id="cArea">–</div><div class="l">Diện tích vùng nghiên cứu (km²)</div></div>
+        <div class="card"><div class="v" id="cMean">–</div><div class="l">AI trung bình toàn vùng</div></div>
+        <div class="card"><div class="v" id="cGood">–</div><div class="l">Diện tích có PTAL ≥ 2</div></div>
+        <div class="card"><div class="v" id="cZero">–</div><div class="l">Diện tích PTAL 0 (ngoài tầm đi bộ)</div></div>
+      </div>
+      <h3>Lớp hiển thị</h3>
+      <div class="seg" id="viewseg">
+        <button data-v="ptal" class="on">PTAL</button>
+        <button data-v="cover">Vùng phủ vs PTAL</button>
+        <button data-v="diff">Chênh lệch kịch bản</button>
+      </div>
+      <div class="row">
+        <label style="font-size:12px">Độ trong suốt</label><input type="range" id="opac" min="0.2" max="1" step="0.05" value="0.72" style="flex:1">
+        <label style="display:flex;gap:5px;align-items:center;font-size:12px"><input type="checkbox" id="show0"> Tô ô PTAL 0</label>
+      </div>
+      <h3>Diện tích theo mức PTAL</h3>
+      <div id="chart"></div>
+      <h3>Vùng phủ 300 m có đủ để đánh giá?</h3>
+      <div id="covtxt" class="box soft hint" style="color:var(--ink)"></div>
+      <h3>So sánh kịch bản</h3>
+      <div class="box">
+        <div class="row"><button class="b" id="btnBase">Lưu kết quả hiện tại làm kịch bản gốc</button></div>
+        <div id="difftxt" class="hint">Lưu kịch bản gốc, sau đó chỉnh giãn cách, bật/tắt tuyến hoặc vẽ tuyến giả định rồi tính lại để xem chênh lệch.</div>
+      </div>
+      <h3>Tiếp cận tiện ích đô thị</h3>
+      <div class="box">
+        <div class="row"><button class="b" id="btnPoi">Tải tiện ích từ Sheet</button><label style="display:flex;gap:5px;align-items:center;font-size:12px"><input type="checkbox" id="showPoi" checked> Hiện trên bản đồ</label></div>
+        <p class="hint">Danh sách ở trang "TienIch" của Google Sheet (nhập từ OSM qua menu PTAL hoặc tự nhập).</p>
+        <div id="poires"></div>
+      </div>
+      <h3>Xuất dữ liệu</h3>
+      <div class="row">
+        <button class="b s" id="exGeo">Lưới PTAL (GeoJSON)</button>
+        <button class="b s" id="exCsv">Lưới PTAL (CSV)</button>
+        <button class="b s" id="exStat">Bảng thống kê (CSV)</button>
+        <button class="b s" id="exScen">Kịch bản (JSON)</button>
+        <button class="b s" id="exCopy">Sao chép thống kê</button>
+      </div>
+      <p class="hint">GeoJSON/CSV chỉ gồm các ô có AI &gt; 0 (hệ tọa độ WGS84), mở được trong QGIS/ArcGIS.</p>
+    </div>
+  </section>
+
+  <!-- PHƯƠNG PHÁP -->
+  <section class="panel method" id="p-method">
+    <h3>Chỉ số PTAL (Public Transport Accessibility Level)</h3>
+    <p>PTAL đo "mật độ dịch vụ" giao thông công cộng tại một điểm: kết hợp thời gian đi bộ tới điểm dừng và thời gian chờ dự kiến của mọi tuyến trong tầm đi bộ. Phương pháp do Transport for London chuẩn hoá (TfL, 2015); Greater Manchester dùng biến thể GMAL.</p>
+    <p>Với mỗi ô lưới, mỗi tuyến <i>r</i> chỉ tính một lần tại điểm dừng cho tổng thời gian tiếp cận nhỏ nhất:</p>
+    <div class="f">
+      WT = (d<sub>chim bay</sub> × hệ số vòng) / v<sub>đi bộ</sub><br>
+      SWT = 0,5 × 60 / f &nbsp;&nbsp;(f: chuyến/giờ trong khung giờ)<br>
+      AWT = SWT + hệ số tin cậy (buýt 2 ph; ray 0,75 ph)<br>
+      TAT = WT + AWT<br>
+      EDF = 30 / TAT<br>
+      AI<sub>phương thức</sub> = EDF<sub>max</sub> + 0,5 × Σ EDF<sub>còn lại</sub><br>
+      AI = AI<sub>buýt</sub> + AI<sub>ray</sub>
+    </div>
+    <p>Chỉ xét điểm dừng trong bán kính đi bộ tối đa (buýt 640 m, ray 960 m). AI được quy đổi sang 9 mức:</p>
+    <table id="bandtable"><thead><tr><th>Mức</th><th class="num">AI</th></tr></thead><tbody></tbody></table>
+    <h3>Ví dụ tính tay</h3>
+    <p>Một ô cách điểm dừng tuyến A 200 m (giãn cách 10 phút) và điểm dừng tuyến B 400 m (giãn cách 5 phút), hệ số vòng 1,2:</p>
+    <div class="f">
+      A: WT = 240/80 = 3,0; SWT = 0,5×60/6 = 5,0; AWT = 7,0; TAT = 10,0; EDF = 3,00<br>
+      B: WT = 480/80 = 6,0; SWT = 0,5×60/12 = 2,5; AWT = 4,5; TAT = 10,5; EDF = 2,86<br>
+      AI = 3,00 + 0,5 × 2,86 = 4,43 → PTAL 1b
+    </div>
+    <h3>Vì sao so sánh với vùng phủ 300 m</h3>
+    <p>Cách đánh giá phổ biến là "bao nhiêu % diện tích nằm trong 300 m quanh điểm dừng". Cách này bỏ qua tần suất: một điểm dừng 30 phút/chuyến vẫn được tính là "được phục vụ". Lớp <i>Vùng phủ vs PTAL</i> chỉ ra những nơi nằm trong vùng phủ nhưng PTAL vẫn rất kém.</p>
+    <h3>Giới hạn</h3>
+    <ul>
+      <li>Khoảng cách đi bộ ước lượng bằng đường chim bay × hệ số vòng, chưa tính trên mạng lưới đường.</li>
+      <li>Giãn cách lấy theo công bố (cao điểm/thấp điểm), giả định đều trong cả khung giờ. Tuyến chưa công bố dùng giá trị mặc định trong trang ThamSo.</li>
+      <li>Trạm chưa có toạ độ được nội suy dọc lộ trình giữa hai trạm đã biết (có đánh dấu).</li>
+      <li>PTAL chưa xét điểm đến, giờ mở cửa hay khả năng đi–về trong ngày.</li>
+    </ul>
+    <h3>Kiến trúc</h3>
+    <p>Giao diện này (GitHub Pages) chỉ hiển thị. Dữ liệu mạng lưới, tham số và mô hình tính PTAL nằm trên Google Sheet và chạy bằng Apps Script; giao diện gửi kịch bản (giãn cách, bật/tắt tuyến, tuyến giả định, tham số) và nhận về lưới kết quả đã nén.</p>
+    <p class="hint" id="srvver"></p>
+    <h3>Tài liệu</h3>
+    <ul>
+      <li>Transport for London (2015). <i>Assessing transport connectivity in London</i>.</li>
+      <li>Dữ liệu tuyến Đà Nẵng: Trung tâm Quản lý &amp; Điều hành GTCC Đà Nẵng (<a href="https://www.danangbus.vn/lo-trinh-tuyen.html" target="_blank" rel="noopener">danangbus.vn</a>), được dự án mã nguồn mở <a href="https://github.com/tranviethaidn/danabus" target="_blank" rel="noopener">Danabus</a> tổng hợp và gắn toạ độ; trạm chưa có toạ độ được nội suy dọc lộ trình.</li>
+      <li>Dữ liệu bản đồ © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL).</li>
+    </ul>
+  </section>
+
+  <div id="actionbar">
+    <div class="st" id="status">Chưa có dữ liệu tuyến.</div>
+    <button class="b p" id="btnRun" disabled>Tính PTAL</button>
+  </div>
+  <footer>© TS. Đặng Minh Tân · Bộ môn Đường bộ – Sân bay | Khoa Công trình và Môi trường | Trường Đại học Giao thông Vận tải. Công cụ phục vụ giảng dạy và nghiên cứu, không thay thế số liệu chính thức.</footer>
+</aside>
+
+<main id="map">
+  <div id="empty"><div class="in">
+    <h2>Kết nối máy chủ dữ liệu</h2>
+    <p id="emptytxt">Dán URL Web App của Google Apps Script (kết thúc bằng /exec) để tải mạng lưới và chạy mô hình.</p>
+    <div class="row" style="justify-content:center"><input type="text" id="apiUrl2" placeholder="https://script.google.com/macros/s/…/exec" style="width:300px"><button class="b p" id="btnConnect2">Kết nối</button></div>
+  </div></div>
+  <div id="drawpanel">
+    <div class="row" style="justify-content:space-between"><b>Vẽ tuyến giả định</b><span id="dinfo" class="hint" style="margin:0">0 điểm</span></div>
+    <div class="row">
+      <input type="text" id="dname" placeholder="Tên tuyến">
+      <select id="dmode"><option value="bus">Buýt / BRT</option><option value="rail">Đường sắt / tram</option></select>
+      <label class="hint" style="margin:0">Giãn cách</label><input type="number" id="dhw" value="10" min="1"><span class="hint" style="margin:0">ph</span>
+    </div>
+    <div class="row">
+      <label style="display:flex;gap:5px;align-items:center;font-size:12.3px"><input type="checkbox" id="dauto"> Nhấp để vẽ hướng tuyến, tự đặt điểm dừng mỗi</label>
+      <input type="number" id="dstep" value="400" min="100" step="50"><span class="hint" style="margin:0">m</span>
+    </div>
+    <p class="hint" style="margin:2px 0 6px">Nhấp lên bản đồ để đặt điểm dừng (hoặc điểm hướng tuyến).</p>
+    <p class="hint" id="dpath" style="margin:0 0 6px;max-height:70px;overflow:auto;display:none"></p>
+    <div class="row"><button class="b s" id="dundo">Xoá điểm cuối</button><button class="b s" id="dcancel">Huỷ</button><button class="b s p" id="dsave">Lưu tuyến</button></div>
+  </div>
+  <div class="legend" id="legend" style="display:none"></div>
+  <div id="busy"><div class="in" id="busytxt">Đang xử lý…</div></div>
+  <div id="toast"></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* =========================================================================
+ * Chuyển ngữ giao diện VI ⇄ EN. Văn bản gốc trong mã là tiếng Việt;
+ * khi chọn EN, mọi nút văn bản (kể cả nội dung sinh động) được dịch theo
+ * từ điển khớp nguyên câu + mẫu biểu thức chính quy. Phần tử có lớp .notr
+ * (tên tuyến, tên trạm, dữ liệu) giữ nguyên.
+ * ========================================================================= */
+(function () {
+'use strict';
+const EXACT = {
+  // đầu trang, thẻ
+  'PTAL Đà Nẵng': 'PTAL Da Nang',
+  'Đánh giá mức độ tiếp cận giao thông công cộng theo chỉ số PTAL (Transport for London). Dữ liệu và mô hình tính chạy trên Google Sheet (Apps Script).': 'Public transport accessibility assessment using the PTAL index (Transport for London). Data and the calculation model run on Google Sheets (Apps Script).',
+  'Dữ liệu': 'Data', 'Tuyến': 'Routes', 'Tham số': 'Parameters', 'Kết quả': 'Results', 'Phương pháp': 'Method', 'Quản trị': 'Admin',
+  // tab Dữ liệu
+  'Máy chủ dữ liệu': 'Data server', 'Chưa kết nối.': 'Not connected.', 'Tải mạng lưới từ Google Sheet': 'Load network from Google Sheet',
+  'Vùng nghiên cứu': 'Study area', 'Mô hình chỉ tính lưới trong vùng này (khung nét đứt trên bản đồ).': 'The model computes the grid only inside this area (dashed frame on the map).',
+  'Khung giờ': 'Time period', 'Giãn cách theo': 'Headways for', 'Cao điểm': 'Peak', 'Thấp điểm': 'Off-peak',
+  'Kịch bản': 'Scenario', '— Kịch bản đã lưu trên Sheet —': '— Scenarios saved on the Sheet —', 'Mở': 'Open', 'Tên kịch bản': 'Scenario name',
+  'Lưu lên Sheet': 'Save to Sheet', 'Xoá': 'Delete', 'Lưu/xoá cần khoá quản trị (tab Quản trị). Có thể xuất/nạp tệp JSON ở tab Kết quả.': 'Saving/deleting requires the admin key (Admin tab). JSON files can be exported/imported in the Results tab.',
+  'Nạp tệp kịch bản:': 'Load scenario file:', 'Khung nhìn bản đồ hiện tại': 'Current map view',
+  'Đà Nẵng – khu đô thị trung tâm': 'Da Nang – central urban area', 'Đà Nẵng – Hội An (dải ven biển)': 'Da Nang – Hoi An (coastal strip)', 'TP Đà Nẵng mở rộng (gồm Quảng Nam cũ)': 'Greater Da Nang (incl. former Quang Nam)',
+  // tab Quản trị
+  'Kết nối Apps Script': 'Apps Script connection', 'URL Web App (kết thúc bằng /exec)': 'Web App URL (ending in /exec)', 'Kết nối': 'Connect',
+  'URL được nhớ trên trình duyệt này. Có thể đặt sẵn trong mã (hằng': 'The URL is remembered in this browser. It can also be preset in the code (constant',
+  ') hoặc mở trang với': ') or by opening the page with',
+  'Khoá quản trị': 'Admin key', 'Khoá đặt trong menu PTAL của Google Sheet': 'Key set in the PTAL menu of the Google Sheet', 'Nhớ khoá trên trình duyệt này': 'Remember key in this browser',
+  'Nhập GTFS vào Google Sheet': 'Import GTFS into Google Sheet', 'Giờ bắt đầu': 'Start time', 'Giờ kết thúc': 'End time', 'Ngày trong tuần': 'Day of week',
+  'Thứ Hai': 'Monday', 'Thứ Ba': 'Tuesday', 'Thứ Tư': 'Wednesday', 'Thứ Năm': 'Thursday', 'Thứ Sáu': 'Friday', 'Thứ Bảy': 'Saturday', 'Chủ Nhật': 'Sunday',
+  'Nhập GTFS (thay mạng lưới trên Sheet)': 'Import GTFS (replaces network on Sheet)',
+  'Máy chủ đếm tần suất từng trạm trong khung giờ và ghi đè các trang Tuyen, Tram, HinhHoc. Nên sao lưu Sheet trước.': 'The server counts departures per stop in the time window and overwrites the Tuyen, Tram and HinhHoc sheets. Back up the Sheet first.',
+  // tab Tuyến
+  '+ Vẽ tuyến giả định': '+ Draw scenario route', 'Bật hết': 'All on', 'Tắt hết': 'All off', 'Điểm dừng': 'Stops', 'Lọc tuyến…': 'Filter routes…',
+  'Đặt giãn cách': 'Set headway', 'phút cho': 'min for', 'tuyến chưa có dữ liệu': 'routes without data', 'tuyến đang hiển thị': 'listed routes',
+  'Giãn cách (ph)': 'Headway (min)', 'Đ.dừng': 'Stops', 'Buýt': 'Bus', 'Ray': 'Rail',
+  'giãn cách chưa công bố': 'headway not published', 'đã chỉnh giãn cách': 'headway edited', 'tuyến giả định': 'scenario route',
+  'trợ giá': 'subsidised', 'không trợ giá': 'non-subsidised', 'liền kề': 'inter-provincial', 'du lịch': 'tourist',
+  'Về giá trị trên Sheet': 'Reset to Sheet value', 'chưa rõ giãn cách': 'headway unknown', 'Vẽ': 'Draw',
+  // Tham số
+  'Lưới tính toán': 'Calculation grid', 'Kích thước ô lưới (m)': 'Grid cell size (m)', 'Đi bộ tiếp cận': 'Walk access',
+  'Tốc độ đi bộ (m/phút)': 'Walking speed (m/min)', 'Hệ số đường vòng (đi bộ / chim bay)': 'Detour factor (walk / straight line)',
+  'Bán kính tối đa tới điểm dừng buýt (m)': 'Max. walk distance to bus stop (m)', 'Bán kính tối đa tới ga đường sắt/tram (m)': 'Max. walk distance to rail/tram station (m)',
+  'Thời gian chờ': 'Waiting time', 'Hệ số tin cậy buýt (phút)': 'Bus reliability factor (min)', 'Hệ số tin cậy đường sắt (phút)': 'Rail reliability factor (min)',
+  'So sánh với cách đánh giá vùng phủ': 'Comparison with coverage-based assessment', 'Bán kính vùng phủ quanh điểm dừng (m)': 'Coverage radius around stops (m)',
+  'Giá trị mặc định theo hướng dẫn PTAL của TfL (2015): 4,8 km/h, 8 phút đi bộ tới buýt, 12 phút tới đường sắt. Hệ số đường vòng thay cho việc tính khoảng cách đi bộ trên mạng lưới đường.': 'Defaults follow the TfL (2015) PTAL guidance: 4.8 km/h, 8 min walk to bus, 12 min to rail. The detour factor replaces network-based walking distance.',
+  'Khôi phục mặc định': 'Restore defaults',
+  // Kết quả
+  'Chưa có kết quả. Nạp dữ liệu tuyến rồi bấm': 'No results yet. Load the route data, then press', 'Tính PTAL': 'Compute PTAL',
+  'Diện tích vùng nghiên cứu (km²)': 'Study area (km²)', 'AI trung bình toàn vùng': 'Mean AI over area', 'Diện tích có PTAL ≥ 2': 'Area with PTAL ≥ 2', 'Diện tích PTAL 0 (ngoài tầm đi bộ)': 'Area with PTAL 0 (beyond walking range)',
+  'Lớp hiển thị': 'Map layer', 'PTAL': 'PTAL', 'Vùng phủ vs PTAL': 'Coverage vs PTAL', 'Chênh lệch kịch bản': 'Scenario difference',
+  'Độ trong suốt': 'Opacity', 'Tô ô PTAL 0': 'Shade PTAL 0 cells', 'Diện tích theo mức PTAL': 'Area by PTAL level', 'Mức': 'Level', 'ngoài tầm đi bộ': 'beyond walking range',
+  'Vùng phủ 300 m có đủ để đánh giá?': 'Is 300 m coverage a sufficient measure?', 'So sánh kịch bản': 'Scenario comparison',
+  'Lưu kết quả hiện tại làm kịch bản gốc': 'Save current result as baseline',
+  'Lưu kịch bản gốc, sau đó chỉnh giãn cách, bật/tắt tuyến hoặc vẽ tuyến giả định rồi tính lại để xem chênh lệch.': 'Save a baseline, then edit headways, toggle routes or draw scenario routes and recompute to see the difference.',
+  'Gốc': 'Baseline', 'Hiện tại': 'Current', 'AI trung bình': 'Mean AI', 'PTAL ≥ 2 (km²)': 'PTAL ≥ 2 (km²)', 'PTAL 0 (km²)': 'PTAL 0 (km²)',
+  'Chọn lớp': 'Select the', 'để xem trên bản đồ.': 'layer to view it on the map.',
+  'Đã lưu kịch bản gốc. Hãy thay đổi tuyến/giãn cách hoặc vẽ tuyến giả định, rồi bấm': 'Baseline saved. Now change routes/headways or draw a scenario route, then press',
+  'Tiếp cận tiện ích đô thị': 'Access to urban facilities', 'Tải tiện ích từ Sheet': 'Load facilities from Sheet', 'Hiện trên bản đồ': 'Show on map',
+  'Danh sách ở trang "TienIch" của Google Sheet (nhập từ OSM qua menu PTAL hoặc tự nhập).': 'List from the "TienIch" sheet (imported from OSM via the PTAL menu or entered manually).',
+  'Loại': 'Type', 'Số': 'Count', 'Mức PTAL tại vị trí tiện ích.': 'PTAL level at each facility location.', 'Tính PTAL để xem mức tiếp cận của các tiện ích.': 'Compute PTAL to see facility accessibility.',
+  'Chợ': 'Market', 'Siêu thị / TTTM': 'Supermarket / mall', 'Bệnh viện': 'Hospital', 'Phòng khám / trạm y tế': 'Clinic / health post', 'Trường phổ thông': 'School', 'Đại học / cao đẳng': 'University / college', 'Trụ sở hành chính': 'Government office',
+  'Xuất dữ liệu': 'Export', 'Lưới PTAL (GeoJSON)': 'PTAL grid (GeoJSON)', 'Lưới PTAL (CSV)': 'PTAL grid (CSV)', 'Bảng thống kê (CSV)': 'Statistics (CSV)', 'Kịch bản (JSON)': 'Scenario (JSON)', 'Sao chép thống kê': 'Copy statistics',
+  'GeoJSON/CSV chỉ gồm các ô có AI > 0 (hệ tọa độ WGS84), mở được trong QGIS/ArcGIS.': 'GeoJSON/CSV include only cells with AI > 0 (WGS84), readable in QGIS/ArcGIS.',
+  // chú giải
+  'Mức PTAL': 'PTAL level', '0 (không có dịch vụ)': '0 (no service)', '1a (rất kém)': '1a (very poor)', '1b (rất kém)': '1b (very poor)', '2 (kém)': '2 (poor)', '3 (trung bình)': '3 (moderate)', '4 (tốt)': '4 (good)', '5 (rất tốt)': '5 (very good)', '6a (xuất sắc)': '6a (excellent)', '6b (xuất sắc)': '6b (excellent)',
+  'Trong vùng phủ nhưng PTAL ≤ 1b': 'Covered but PTAL ≤ 1b', 'Trong vùng phủ, PTAL ≥ 2': 'Covered, PTAL ≥ 2', 'Ngoài vùng phủ nhưng PTAL ≥ 2': 'Not covered but PTAL ≥ 2', 'Ngoài vùng phủ, PTAL ≤ 1b': 'Not covered, PTAL ≤ 1b',
+  'Chênh lệch AI so với gốc': 'AI change vs baseline', 'Tăng (≥ +4)': 'Increase (≥ +4)', 'Tăng ít': 'Small increase', 'Giảm ít': 'Small decrease', 'Giảm (≤ −4)': 'Decrease (≤ −4)',
+  // popup
+  'Đang tính tại điểm…': 'Computing at point…', 'Đi bộ m': 'Walk m', 'TAT ph': 'TAT min', 'ch/h': 'veh/h',
+  'Lớp màu là kết quả cũ; bảng dưới tính theo kịch bản hiện tại.': 'The colour layer is an older result; the table below uses the current scenario.',
+  'Không có điểm dừng nào trong tầm đi bộ.': 'No stop within walking distance.', 'TAT = đi bộ + 0,5×60/f + hệ số tin cậy; EDF = 30/TAT.': 'TAT = walk + 0.5×60/f + reliability factor; EDF = 30/TAT.',
+  // vẽ
+  'Vẽ tuyến giả định': 'Draw scenario route', 'Tên tuyến': 'Route name', 'Buýt / BRT': 'Bus / BRT', 'Đường sắt / tram': 'Rail / tram', 'Giãn cách': 'Headway',
+  'Nhấp để vẽ hướng tuyến, tự đặt điểm dừng mỗi': 'Click to trace the alignment; place stops every',
+  'Nhấp lên bản đồ để đặt điểm dừng (hoặc điểm hướng tuyến).': 'Click on the map to place stops (or alignment points).',
+  'Xoá điểm cuối': 'Undo last point', 'Huỷ': 'Cancel', 'Lưu tuyến': 'Save route', '0 điểm': '0 points',
+  // trạng thái, thông báo
+  'Đang xử lý…': 'Working…', 'Chưa có dữ liệu tuyến.': 'No route data.', 'Chưa tải mạng lưới.': 'Network not loaded.', 'Chưa kết nối máy chủ.': 'Not connected to server.',
+  'Kết nối máy chủ dữ liệu': 'Connect to the data server', 'Dán URL Web App của Google Apps Script (kết thúc bằng /exec) để tải mạng lưới và chạy mô hình.': 'Paste the Google Apps Script Web App URL (ending in /exec) to load the network and run the model.',
+  'Chưa cấu hình máy chủ — xem tab': 'No server configured — see the', 'Đang kết nối máy chủ…': 'Connecting to server…', 'Đang tải mạng lưới từ Google Sheet…': 'Loading network from Google Sheet…',
+  'Máy chủ đang tính PTAL…': 'Server is computing PTAL…', 'Đang tải tiện ích…': 'Loading facilities…', 'Đang mở kịch bản…': 'Opening scenario…', 'Đang lưu kịch bản…': 'Saving scenario…', 'Đang xoá…': 'Deleting…', 'Đang tải GTFS lên máy chủ…': 'Uploading GTFS to server…',
+  'Đã sao chép.': 'Copied.', 'Không sao chép được.': 'Could not copy.', 'Cần ít nhất 2 điểm dừng.': 'At least 2 stops are needed.',
+  'Đã thêm tuyến giả định. Bấm Tính PTAL để cập nhật.': 'Scenario route added. Press Compute PTAL to update.',
+  'Lưu kịch bản gốc trước, rồi thay đổi tuyến và tính lại.': 'Save a baseline first, then change routes and recompute.',
+  'Dữ liệu đã thay đổi — tính lại trước khi lưu làm gốc.': 'Data changed — recompute before saving as baseline.', 'Đã lưu kịch bản gốc.': 'Baseline saved.',
+  'Nhập tên kịch bản.': 'Enter a scenario name.', 'Nhập khoá quản trị ở tab Quản trị.': 'Enter the admin key in the Admin tab.', 'Nhập khoá quản trị.': 'Enter the admin key.',
+  'Đã nạp kịch bản từ tệp.': 'Scenario loaded from file.', 'Tệp không hợp lệ.': 'Invalid file.', 'Chọn tệp GTFS (.zip).': 'Choose a GTFS file (.zip).', 'Tệp quá lớn (tối đa ~20 MB qua Apps Script).': 'File too large (max ~20 MB via Apps Script).',
+  'URL phải là địa chỉ Web App của Google Apps Script (https://script.google.com/…/exec).': 'The URL must be a Google Apps Script Web App address (https://script.google.com/…/exec).',
+  'Chưa cấu hình URL máy chủ.': 'Server URL not configured.', 'Lỗi máy chủ': 'Server error', 'Lưới giải mã không khớp kích thước.': 'Decoded grid size mismatch.',
+  'Máy chủ trả về dữ liệu không phải JSON — kiểm tra quyền truy cập Web App ("Bất kỳ ai").': 'The server did not return JSON — check the Web App access setting ("Anyone").',
+  'Trang "TienIch" trên Sheet đang trống — dùng menu PTAL → Nhập tiện ích.': 'The "TienIch" sheet is empty — use PTAL menu → Import facilities.',
+  // lỗi từ máy chủ
+  'Sai khoá quản trị.': 'Wrong admin key.', 'Chưa đặt khoá quản trị (menu PTAL → Đặt khoá quản trị).': 'Admin key not set (PTAL menu → Set admin key).',
+  'Không có tuyến nào đang bật.': 'No route is enabled.', 'Vùng nghiên cứu không hợp lệ.': 'Invalid study area.', 'Thiếu tên kịch bản.': 'Missing scenario name.',
+  'Không có chuyến nào trong khung giờ đã chọn.': 'No trips in the selected time window.', 'Thiếu tệp GTFS.': 'Missing GTFS file.', 'Toạ độ không hợp lệ.': 'Invalid coordinates.', 'Quá nhiều tuỳ chỉnh tuyến.': 'Too many route overrides.', 'Quá nhiều điểm dừng giả định.': 'Too many scenario stops.', 'Không có kịch bản này.': 'Scenario not found.',
+  // nền bản đồ
+  'Esri – Nền xám nhạt': 'Esri – Light grey', 'Esri – Đường phố': 'Esri – Streets', 'Esri – Ảnh vệ tinh': 'Esri – Imagery', 'OpenTopoMap (địa hình)': 'OpenTopoMap (terrain)', 'Tiện ích': 'Facilities',
+  // phương pháp
+  'Chỉ số PTAL (Public Transport Accessibility Level)': 'The PTAL index (Public Transport Accessibility Level)',
+  'PTAL đo "mật độ dịch vụ" giao thông công cộng tại một điểm: kết hợp thời gian đi bộ tới điểm dừng và thời gian chờ dự kiến của mọi tuyến trong tầm đi bộ. Phương pháp do Transport for London chuẩn hoá (TfL, 2015); Greater Manchester dùng biến thể GMAL.': 'PTAL measures the "density" of public transport service at a point, combining the walk time to stops with the expected waiting time of every route within walking distance. The method was standardised by Transport for London (TfL, 2015); Greater Manchester uses the GMAL variant.',
+  'Với mỗi ô lưới, mỗi tuyến': 'For each grid cell, each route', 'chỉ tính một lần tại điểm dừng cho tổng thời gian tiếp cận nhỏ nhất:': 'is counted once, at the stop giving the smallest total access time:',
+  '× hệ số vòng) / v': '× detour factor) / v', 'đi bộ': 'walk', 'SWT = 0,5 × 60 / f (f: chuyến/giờ trong khung giờ)': 'SWT = 0.5 × 60 / f (f: departures/hour in the period)',
+  'AWT = SWT + hệ số tin cậy (buýt 2 ph; ray 0,75 ph)': 'AWT = SWT + reliability factor (bus 2 min; rail 0.75 min)', 'phương thức': 'mode', '+ 0,5 × Σ EDF': '+ 0.5 × Σ EDF', 'còn lại': 'others', 'buýt': 'bus',
+  'Chỉ xét điểm dừng trong bán kính đi bộ tối đa (buýt 640 m, ray 960 m). AI được quy đổi sang 9 mức:': 'Only stops within the maximum walking distance are considered (bus 640 m, rail 960 m). AI is converted into 9 levels:',
+  'Ví dụ tính tay': 'Worked example',
+  'Một ô cách điểm dừng tuyến A 200 m (giãn cách 10 phút) và điểm dừng tuyến B 400 m (giãn cách 5 phút), hệ số vòng 1,2:': 'A cell 200 m from a stop of route A (10-min headway) and 400 m from a stop of route B (5-min headway), detour factor 1.2:',
+  'A: WT = 240/80 = 3,0; SWT = 0,5×60/6 = 5,0; AWT = 7,0; TAT = 10,0; EDF = 3,00': 'A: WT = 240/80 = 3.0; SWT = 0.5×60/6 = 5.0; AWT = 7.0; TAT = 10.0; EDF = 3.00',
+  'B: WT = 480/80 = 6,0; SWT = 0,5×60/12 = 2,5; AWT = 4,5; TAT = 10,5; EDF = 2,86': 'B: WT = 480/80 = 6.0; SWT = 0.5×60/12 = 2.5; AWT = 4.5; TAT = 10.5; EDF = 2.86',
+  'AI = 3,00 + 0,5 × 2,86 = 4,43 → PTAL 1b': 'AI = 3.00 + 0.5 × 2.86 = 4.43 → PTAL 1b',
+  'Vì sao so sánh với vùng phủ 300 m': 'Why compare with 300 m coverage',
+  'Cách đánh giá phổ biến là "bao nhiêu % diện tích nằm trong 300 m quanh điểm dừng". Cách này bỏ qua tần suất: một điểm dừng 30 phút/chuyến vẫn được tính là "được phục vụ". Lớp': 'A common assessment is "what share of the area lies within 300 m of a stop". It ignores frequency: a stop served every 30 minutes still counts as "served". The',
+  'chỉ ra những nơi nằm trong vùng phủ nhưng PTAL vẫn rất kém.': 'layer shows places that are covered but still have very poor PTAL.',
+  'Giới hạn': 'Limitations', 'Khoảng cách đi bộ ước lượng bằng đường chim bay × hệ số vòng, chưa tính trên mạng lưới đường.': 'Walking distance is estimated as straight-line distance × detour factor, not along the street network.',
+  'Giãn cách lấy theo công bố (cao điểm/thấp điểm), giả định đều trong cả khung giờ. Tuyến chưa công bố dùng giá trị mặc định trong trang ThamSo.': 'Headways follow published values (peak/off-peak), assumed uniform over the period. Routes without published headways use the default in the ThamSo sheet.',
+  'Trạm chưa có toạ độ được nội suy dọc lộ trình giữa hai trạm đã biết (có đánh dấu).': 'Stops without coordinates are interpolated along the route between known stops (flagged).',
+  'PTAL chưa xét điểm đến, giờ mở cửa hay khả năng đi–về trong ngày.': 'PTAL does not consider destinations, opening hours or the feasibility of a same-day return trip.',
+  'Kiến trúc': 'Architecture',
+  'Giao diện này (GitHub Pages) chỉ hiển thị. Dữ liệu mạng lưới, tham số và mô hình tính PTAL nằm trên Google Sheet và chạy bằng Apps Script; giao diện gửi kịch bản (giãn cách, bật/tắt tuyến, tuyến giả định, tham số) và nhận về lưới kết quả đã nén.': 'This interface (GitHub Pages) only displays. Network data, parameters and the PTAL model live on Google Sheets and run in Apps Script; the interface sends the scenario (headways, route toggles, scenario routes, parameters) and receives a compressed result grid.',
+  'Tài liệu': 'References', 'Dữ liệu tuyến Đà Nẵng: Trung tâm Quản lý & Điều hành GTCC Đà Nẵng (': 'Da Nang route data: Da Nang Public Transport Management & Operation Centre (',
+  '), được dự án mã nguồn mở': '), compiled and geocoded by the open-source project', 'tổng hợp và gắn toạ độ; trạm chưa có toạ độ được nội suy dọc lộ trình.': '; stops lacking coordinates are interpolated along the route.',
+  'Dữ liệu bản đồ ©': 'Map data ©', 'ph': 'min', 'chim bay': 'straight-line', 'Phương thức': 'Mode',
+  '© TS. Đặng Minh Tân · Bộ môn Đường bộ – Sân bay | Khoa Công trình và Môi trường | Trường Đại học Giao thông Vận tải. Công cụ phục vụ giảng dạy và nghiên cứu, không thay thế số liệu chính thức.': '© Dr. Dang Minh Tan · Department of Highway and Airport Engineering | Faculty of Civil and Environmental Engineering | University of Transport and Communications. For teaching and research; not a substitute for official data.'
+};
+const n = (s) => s.replace(/\s+/g, ' ').trim();
+const EX = {}; Object.keys(EXACT).forEach(k => EX[n(k)] = EXACT[k]);
+const P = (re, fn) => [re, fn];
+const PATTERNS = [
+  P(/^(\d+)\/(\d+) tuyến đang bật \((thấp điểm|cao điểm)\)\.(?: (\d+) tuyến dùng giãn cách mặc định\.)?( Đã thay đổi — cần tính lại\.)?$/, m => `${m[1]}/${m[2]} routes enabled (${m[3] === 'thấp điểm' ? 'off-peak' : 'peak'}).` + (m[4] ? ` ${m[4]} route(s) use the default headway.` : '') + (m[5] ? ' Changed — recompute needed.' : '')),
+  P(/^(\d+) tuyến \((\d+) đang bật\)\. Chỉnh ở đây chỉ áp cho kịch bản; muốn sửa dữ liệu gốc hãy sửa trang "Tuyen" trên Google Sheet\.$/, m => `${m[1]} routes (${m[2]} enabled). Edits here apply to the scenario only; to change the source data, edit the "Tuyen" sheet in Google Sheets.`),
+  P(/^Đã đặt (.+) ph cho (\d+) tuyến\.$/, m => `Set ${m[1]} min for ${m[2]} routes.`),
+  P(/^(\d+) điểm dừng · (.+) km$/, m => `${m[1]} stops · ${m[2]} km`),
+  P(/^(\d+) trạm nội suy$/, m => `${m[1]} interpolated stops`),
+  P(/^đã hợp nhất(?: vào (.+))?$/, m => 'merged' + (m[1] ? ' into ' + m[1] : '')),
+  P(/^Mạng lưới: (\d+) tuyến, (\d+) trạm\.$/, m => `Network: ${m[1]} routes, ${m[2]} stops.`),
+  P(/^Máy chủ tính (.+) ô \((\d+) m\) trong (\d+) ms; tổng thời gian (\d+) ms; dữ liệu (.+) KB\.$/, m => `Server computed ${m[1]} cells (${m[2]} m) in ${m[3]} ms; total ${m[4]} ms; payload ${m[5]} KB.`),
+  P(/^Diện tích nằm trong (\d+) m quanh điểm dừng:$/, m => `Area within ${m[1]} m of a stop:`),
+  P(/^\((.+)% vùng nghiên cứu\)\. Trong đó$/, m => `(${m[1]}% of the study area). Of this,`),
+  P(/^vẫn có PTAL ≤ 1b, tức là được "phủ" nhưng tần suất quá thấp để coi là có dịch vụ\. Xem lớp$/, () => 'still has PTAL ≤ 1b — "covered" but too infrequent to count as served. See layer'),
+  P(/^Không có điểm dừng nào trong vùng nghiên cứu\.$/, () => 'No stops in the study area.'),
+  P(/^Vùng phủ (\d+) m vs PTAL$/, m => `${m[1]} m coverage vs PTAL`),
+  P(/^… và (\d+) tuyến khác\.$/, m => `… and ${m[1]} more routes.`),
+  P(/^Đã tải (\d+) tiện ích\.$/, m => `Loaded ${m[1]} facilities.`),
+  P(/^Đã nhập (\d+) tuyến vào Google Sheet\.$/, m => `Imported ${m[1]} routes into Google Sheet.`),
+  P(/^Đã mở kịch bản "(.*)"\. Bấm Tính PTAL\.$/, m => `Opened scenario "${m[1]}". Press Compute PTAL.`),
+  P(/^Đã lưu kịch bản "(.*)"\.$/, m => `Saved scenario "${m[1]}".`),
+  P(/^Đã cập nhật kịch bản "(.*)"\.$/, m => `Updated scenario "${m[1]}".`),
+  P(/^Đã xoá "(.*)"\.$/, m => `Deleted "${m[1]}".`),
+  P(/^Nền "(.*)" không tải được, đã chuyển sang "(.*)"\.$/, m => `Basemap "${tr(m[1])}" failed to load; switched to "${tr(m[2])}".`),
+  P(/^(\d+) tuyến chưa có toạ độ trạm nên chưa được tính\. Có thể vẽ bổ sung theo lộ trình công bố:$/, m => `${m[1]} routes have no stop coordinates and are not included. You can draw them from the published itinerary:`),
+  P(/^(\d+) tuyến · nguồn:/, (m, s) => s.replace(m[0], `${m[1]} routes · source:`).replace(' · cập nhật ', ' · updated ')),
+  P(/^Máy chủ:$/, () => 'Server:'),
+  P(/^Máy chủ Apps Script phiên bản (.+)\.$/, m => `Apps Script server version ${m[1]}.`),
+  P(/^Lộ trình công bố: /, (m, s) => 'Published itinerary: ' + s.slice(m[0].length)),
+  P(/^Lưới quá lớn \((.+) triệu ô\)\. Hãy tăng kích thước ô hoặc thu hẹp khu vực\.$/, m => `Grid too large (${m[1]} million cells). Increase the cell size or reduce the area.`),
+  P(/^Tối đa (\d+) tuyến giả định\.$/, m => `At most ${m[1]} scenario routes.`),
+  P(/^Không có kịch bản "(.*)"$/, m => `No scenario named "${m[1]}"`),
+  P(/^GTFS thiếu tệp (.+)$/, m => `GTFS is missing ${m[1]}`),
+  P(/^(\d+(?:[.,]\d+)?)\/(\d+(?:[.,]\d+)?) ph$/, m => `${m[1]}/${m[2]} min`),
+  P(/^Tuyến giả định (\d+)$/, m => `Scenario route ${m[1]}`),
+  // tiền tố + phần còn lại được dịch đệ quy
+  P(/^(Lỗi tính toán|Lỗi nhập GTFS|Không kết nối được|Không đọc được danh sách kịch bản|Lỗi): (.*)$/, m => ({ 'Lỗi tính toán': 'Calculation error', 'Lỗi nhập GTFS': 'GTFS import error', 'Không kết nối được': 'Cannot connect', 'Không đọc được danh sách kịch bản': 'Cannot read scenario list', 'Lỗi': 'Error' })[m[1]] + ': ' + tr(m[2])),
+  P(/^✓ Đã kết nối: (.*)$/, m => '✓ Connected: ' + m[1]),
+  P(/^✗ (.*)$/, m => '✗ ' + tr(m[1]))
+];
+let LANG = 'vi';
+try { LANG = new URLSearchParams(location.search).get('lang') || localStorage.getItem('ptal_lang') || 'vi'; } catch (e) {}
+if (LANG !== 'en') LANG = 'vi';
+
+function tr(s) {
+  if (LANG !== 'en' || !s) return s;
+  const k = n(s);
+  if (EX[k] != null) return EX[k];
+  for (const [re, fn] of PATTERNS) { const m = k.match(re); if (m) return fn(m, k); }
+  if (k.includes(' · ')) { const parts = k.split(' · '); const t = parts.map(p => { const x = tr(p); return x; }); if (t.some((x, i) => x !== parts[i])) return t.join(' · '); }
+  return s;
+}
+// nhật ký: từng dòng "hh:mm:ss  nội dung"
+function trLog(s) { return s.split('\n').map(l => { const m = l.match(/^(\S+)\s\s(.*)$/); return m ? m[1] + '  ' + tr(m[2]) : l; }).join('\n'); }
+
+const ORIG = new WeakMap();
+const SKIP = new Set(['SCRIPT', 'STYLE', 'CODE', 'OPTION_DATA']);
+function skip(el) { return !el || (el.closest && el.closest('.notr,code,script,style')); }
+function trText(node) {
+  const p = node.parentElement; if (skip(p)) return;
+  let o = ORIG.get(node);
+  const cur = node.nodeValue;
+  // nếu nội dung đã bị mã khác thay đổi (không phải bản dịch của ta) thì cập nhật bản gốc
+  if (o == null || (cur !== o.vi && cur !== o.en)) { o = { vi: cur, en: null }; ORIG.set(node, o); }
+  const want = LANG === 'en' ? (p && p.id === 'log' ? trLog(o.vi) : keepWs(o.vi, tr(o.vi))) : o.vi;
+  o.en = LANG === 'en' ? want : o.en;
+  if (cur !== want) node.nodeValue = want;
+}
+function keepWs(orig, t) { if (t === orig) return orig; const a = orig.match(/^\s*/)[0], b = orig.match(/\s*$/)[0]; return a + t.trim() + b; }
+const ATTRS = ['placeholder', 'title'];
+function trAttrs(el) {
+  if (skip(el)) return;
+  ATTRS.forEach(a => {
+    if (!el.hasAttribute || !el.hasAttribute(a)) return;
+    const key = 'data-vi-' + a; let vi = el.getAttribute(key);
+    const cur = el.getAttribute(a);
+    if (vi == null || (cur !== vi && cur !== tr(vi))) { vi = cur; el.setAttribute(key, vi); }
+    const want = LANG === 'en' ? tr(vi) : vi;
+    if (cur !== want) el.setAttribute(a, want);
+  });
+}
+function walk(root) {
+  if (!root) return;
+  if (root.nodeType === 3) { trText(root); return; }
+  if (root.nodeType !== 1) return;
+  trAttrs(root);
+  const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+  let x; while ((x = tw.nextNode())) { if (x.nodeType === 3) { if (x.nodeValue.trim()) trText(x); } else trAttrs(x); }
+}
+let busy = false;
+const mo = new MutationObserver(muts => {
+  if (busy) return; busy = true;
+  try { muts.forEach(m => { if (m.type === 'characterData') trText(m.target); else if (m.type === 'attributes') trAttrs(m.target); else m.addedNodes.forEach(walk); }); }
+  finally { busy = false; }
+});
+function apply() {
+  busy = true; try { walk(document.body); } finally { busy = false; }
+  document.documentElement.lang = LANG;
+  document.title = LANG === 'en' ? 'PTAL Da Nang – Public transport accessibility' : 'PTAL Đà Nẵng – Mức độ tiếp cận giao thông công cộng';
+  document.querySelectorAll('#langsw button').forEach(b => b.classList.toggle('on', b.dataset.l === LANG));
+}
+function setLang(l) {
+  LANG = l === 'en' ? 'en' : 'vi';
+  try { localStorage.setItem('ptal_lang', LANG); } catch (e) {}
+  apply();
+  if (window.PTAL_I18N.onChange) window.PTAL_I18N.onChange(LANG);
+}
+window.PTAL_I18N = { tr, setLang, get lang() { return LANG; }, locale: () => LANG === 'en' ? 'en-US' : 'vi-VN', onChange: null };
+document.addEventListener('DOMContentLoaded', () => {
+  apply();
+  mo.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+  document.querySelectorAll('#langsw button').forEach(b => b.onclick = () => setLang(b.dataset.l));
+});
+})();
+
+</script>
+<script>
+(function () {
+'use strict';
+/* =========================================================================
+ * Giao diện PTAL Đà Nẵng — chỉ hiển thị; dữ liệu & mô hình chạy trên
+ * Google Apps Script (Web App gắn với Google Sheet).
+ * ========================================================================= */
+const API_URL = '';   // ← dán URL Web App (…/exec) vào đây để người dùng không phải nhập
+
+const $ = (id) => document.getElementById(id);
+const I18N = window.PTAL_I18N || { tr: s => s, locale: () => 'vi-VN', lang: 'vi' };
+const fmt = (x, d = 1) => (x == null || !isFinite(x)) ? '–' : x.toLocaleString(I18N.locale(), { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} } };
+
+/* ---- Bảng mức PTAL & hàm hiển thị (không phải mô hình tính) ---- */
+const BANDS = [
+  { k: '0', lo: 0, hi: 0, color: '#d9d9d9', label: '0 (không có dịch vụ)' },
+  { k: '1a', lo: 0.01, hi: 2.5, color: '#2c3e8f', label: '1a (rất kém)' },
+  { k: '1b', lo: 2.51, hi: 5, color: '#3f7fd1', label: '1b (rất kém)' },
+  { k: '2', lo: 5.01, hi: 10, color: '#5cc3d6', label: '2 (kém)' },
+  { k: '3', lo: 10.01, hi: 15, color: '#7fcf6a', label: '3 (trung bình)' },
+  { k: '4', lo: 15.01, hi: 20, color: '#f2e34b', label: '4 (tốt)' },
+  { k: '5', lo: 20.01, hi: 25, color: '#f5a83a', label: '5 (rất tốt)' },
+  { k: '6a', lo: 25.01, hi: 40, color: '#e3443a', label: '6a (xuất sắc)' },
+  { k: '6b', lo: 40.01, hi: Infinity, color: '#8a1730', label: '6b (xuất sắc)' }
+];
+const bandIndex = (a) => !(a > 0) ? 0 : a <= 2.5 ? 1 : a <= 5 ? 2 : a <= 10 ? 3 : a <= 15 ? 4 : a <= 20 ? 5 : a <= 25 ? 6 : a <= 40 ? 7 : 8;
+const POI_LABEL = { market: 'Chợ', super: 'Siêu thị / TTTM', hosp: 'Bệnh viện', clinic: 'Phòng khám / trạm y tế', school: 'Trường phổ thông', univ: 'Đại học / cao đẳng', gov: 'Trụ sở hành chính' };
+const CAT = { subsidized: 'trợ giá', non_subsidized: 'không trợ giá', interprovincial: 'liền kề', tourist: 'du lịch', gtfs: 'GTFS', osm: 'OSM' };
+function distM(a1, o1, a2, o2) { const c = Math.cos((a1 + a2) / 2 * Math.PI / 180); const dx = (o2 - o1) * 111320 * c, dy = (a2 - a1) * 111320; return Math.sqrt(dx * dx + dy * dy); }
+function resample(co, step) { const out = [co[0]]; let rem = step; for (let i = 1; i < co.length; i++) { const a = co[i - 1], b = co[i], seg = distM(a[0], a[1], b[0], b[1]); let pos = 0; while (seg - pos >= rem) { pos += rem; rem = step; const t = pos / seg; out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); } rem -= (seg - pos); } return out; }
+function decodePolyline(s) { const pts = []; let i = 0, la = 0, lo = 0; while (i < s.length) { for (const k of [0, 1]) { let r = 0, sh = 0, b; do { b = s.charCodeAt(i++) - 63; r |= (b & 0x1f) << sh; sh += 5; } while (b >= 0x20); const d = (r & 1) ? ~(r >> 1) : (r >> 1); if (k === 0) la += d; else lo += d; } pts.push([la / 1e5, lo / 1e5]); } return pts; }
+const cellAt = (g, lat, lng) => { const i = Math.floor((lng - g.lng0) / g.dLng), j = Math.floor((lat - g.lat0) / g.dLat); return (i < 0 || j < 0 || i >= g.ncol || j >= g.nrow) ? -1 : j * g.ncol + i; };
+const cellCenter = (g, k) => { const j = Math.floor(k / g.ncol), i = k - j * g.ncol; return [g.lat0 + (j + 0.5) * g.dLat, g.lng0 + (i + 0.5) * g.dLng]; };
+
+/* ---- API ---- */
+let API = new URLSearchParams(location.search).get('api') || store.get('ptal_api') || API_URL;
+async function apiGet(action, q) {
+  if (!API) throw new Error('Chưa cấu hình URL máy chủ.');
+  const u = new URL(API); u.searchParams.set('action', action);
+  Object.keys(q || {}).forEach(k => u.searchParams.set(k, q[k]));
+  const r = await fetch(u.toString(), { redirect: 'follow' });
+  return unwrap(r);
+}
+async function apiPost(body) {
+  if (!API) throw new Error('Chưa cấu hình URL máy chủ.');
+  // text/plain để không phát sinh yêu cầu CORS preflight (Apps Script không hỗ trợ OPTIONS)
+  const r = await fetch(API, { method: 'POST', body: JSON.stringify(body), redirect: 'follow' });
+  return unwrap(r);
+}
+async function unwrap(r) {
+  const t = await r.text(); let j;
+  try { j = JSON.parse(t); } catch (e) { throw new Error(r.ok ? 'Máy chủ trả về dữ liệu không phải JSON — kiểm tra quyền truy cập Web App ("Bất kỳ ai").' : 'HTTP ' + r.status); }
+  if (!j.ok) throw new Error(j.error || 'Lỗi máy chủ');
+  return j;
+}
+async function decodeGrid(res) {
+  const bin = Uint8Array.from(atob(res.data), c => c.charCodeAt(0));
+  const buf = await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  const dv = new DataView(buf), N = buf.byteLength / 2, g = res.grid;
+  if (N !== g.nrow * g.ncol) throw new Error('Lưới giải mã không khớp kích thước.');
+  const ai = new Float32Array(N), cover = new Uint8Array(N);
+  for (let k = 0; k < N; k++) { const v = dv.getUint16(2 * k, true); ai[k] = (v & 0x7fff) / g.scale; cover[k] = v >> 15; }
+  return Object.assign({}, g, { ai, cover });
+}
+
+/* ---- Trạng thái ---- */
+const S = { net: null, routes: [], regions: [], region: null, regionKey: null, grid: null, stats: null, base: null, baseStats: null, view: 'ptal', dirty: false, pois: [], draw: null, paramsTouched: false, pending: 0 };
+
+/* ---------------- Bản đồ ---------------- */
+const map = L.map('map', { preferCanvas: true }).setView([16.054, 108.202], 12);
+const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+const esriAttr = 'Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors';
+const BASEMAPS = [
+  { name: 'Esri – Nền xám nhạt', url: ESRI + 'Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', o: { maxNativeZoom: 16, attribution: esriAttr } },
+  { name: 'OpenStreetMap', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', o: { maxNativeZoom: 19, attribution: '© OpenStreetMap contributors' } },
+  { name: 'OpenStreetMap (HOT)', url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', o: { maxNativeZoom: 19, subdomains: 'abc', attribution: '© OpenStreetMap contributors, HOT, OSM France' } },
+  { name: 'Esri – Đường phố', url: ESRI + 'World_Street_Map/MapServer/tile/{z}/{y}/{x}', o: { maxNativeZoom: 19, attribution: esriAttr } },
+  { name: 'Esri – Ảnh vệ tinh', url: ESRI + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', o: { maxNativeZoom: 19, attribution: 'Tiles © Esri — Esri, Maxar, Earthstar Geographics' } },
+  { name: 'OpenTopoMap (địa hình)', url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', o: { maxNativeZoom: 17, subdomains: 'abc', attribution: '© OpenStreetMap contributors, SRTM | © OpenTopoMap (CC-BY-SA)' } }
+];
+const baseLayers = {};
+BASEMAPS.forEach((b, i) => {
+  const l = L.tileLayer(b.url, Object.assign({ maxZoom: 19 }, b.o));
+  l._bm = { i, ok: 0, err: 0 };
+  l.on('tileload', () => l._bm.ok++);
+  l.on('tileerror', () => {
+    l._bm.err++;
+    if (l._bm.ok === 0 && l._bm.err >= 6 && map.hasLayer(l) && !l._bm.switched) {
+      l._bm.switched = true;
+      const next = BASEMAPS.slice(i + 1).map(x => baseLayers[x.name]).find(x => !x._bm.switched);
+      if (next) { map.removeLayer(l); next.addTo(map); next.bringToBack(); toast('Nền "' + b.name + '" không tải được, đã chuyển sang "' + BASEMAPS[next._bm.i].name + '".', 5000); }
+    }
+  });
+  baseLayers[b.name] = l;
+});
+(baseLayers[store.get('ptal_basemap')] || baseLayers[BASEMAPS[0].name]).addTo(map);
+map.on('baselayerchange', e => store.set('ptal_basemap', e.name));
+const canvasR = L.canvas({ padding: 0.3 });
+const lyrRoutes = L.layerGroup().addTo(map), lyrStops = L.layerGroup().addTo(map), lyrPoi = L.layerGroup().addTo(map), lyrDraw = L.layerGroup().addTo(map);
+L.control.layers(baseLayers, { 'Tuyến': lyrRoutes, 'Điểm dừng': lyrStops, 'Tiện ích': lyrPoi }, { position: 'topright' }).addTo(map);
+L.control.scale({ imperial: false }).addTo(map);
+let overlay = null, regionRect = null, hilite = null;
+['drawpanel', 'legend', 'empty', 'busy'].forEach(id => { L.DomEvent.disableClickPropagation($(id)); L.DomEvent.disableScrollPropagation($(id)); });
+
+/* ---------------- UI chung ---------------- */
+function toast(msg, ms = 3200) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(() => t.style.display = 'none', ms); }
+function busy(on, txt) { S.pending += on ? 1 : -1; $('busy').style.display = S.pending > 0 ? 'flex' : 'none'; if (txt) $('busytxt').textContent = txt; }
+function log(msg) { const l = $('log'); l.textContent = new Date().toLocaleTimeString('vi-VN') + '  ' + msg + '\n' + l.textContent; }
+function download(name, text, mime) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: mime || 'text/plain' })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+async function copyText(t) { try { await navigator.clipboard.writeText(t); toast('Đã sao chép.'); } catch (e) { toast('Không sao chép được.'); } }
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => showTab(b.dataset.t));
+function showTab(t) { document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.t === t)); document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'p-' + t)); }
+$('bandtable').querySelector('tbody').innerHTML = BANDS.map(b => `<tr><td><span class="sw" style="background:${b.color}"></span>${b.k}</td><td class="num">${b.k === '0' ? '0' : (fmt(b.lo, 2) + ' – ' + (isFinite(b.hi) ? fmt(b.hi, 2) : '…'))}</td></tr>`).join('');
+const PALETTE = ['#1f77b4', '#d62728', '#2ca02c', '#9467bd', '#ff7f0e', '#17becf', '#8c564b', '#e377c2', '#bcbd22', '#393b79', '#637939', '#843c39', '#7b4173', '#3182bd', '#e6550d'];
+
+/* ---------------- Kết nối ---------------- */
+function updateConnUi() {
+  $('apiUrl').value = API || ''; $('apiUrl2').value = API || '';
+  $('conninfo').innerHTML = API ? `Máy chủ: <code style="word-break:break-all">${esc(API.replace(/^https:\/\/script\.google\.com\/macros\/s\//, '…/').slice(0, 60))}</code>` + (S.net ? `<br>${S.routes.filter(r => r.src === 'sheet').length} tuyến · nguồn: ${esc(S.net.source || '–')}${S.net.updated ? ' · cập nhật ' + esc(S.net.updated) : ''}` : '') : 'Chưa cấu hình máy chủ — xem tab <b>Quản trị</b>.';
+  $('empty').style.display = S.net ? 'none' : 'flex';
+}
+async function connect(url) {
+  url = (url || '').trim();
+  if (!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)) { toast('URL phải là địa chỉ Web App của Google Apps Script (https://script.google.com/…/exec).', 6000); return; }
+  API = url; store.set('ptal_api', url);
+  busy(true, 'Đang kết nối máy chủ…');
+  try {
+    const p = await apiGet('ping');
+    $('pingres').textContent = '✓ Đã kết nối: ' + p.sheet + ' (v' + p.version + ')';
+    await loadNetwork();
+  } catch (e) { $('pingres').textContent = '✗ ' + e.message; toast('Không kết nối được: ' + e.message, 7000); }
+  finally { busy(false); updateConnUi(); }
+}
+$('btnConnect').onclick = () => connect($('apiUrl').value);
+$('btnConnect2').onclick = () => connect($('apiUrl2').value);
+
+/* ---------------- Mạng lưới ---------------- */
+async function loadNetwork() {
+  busy(true, 'Đang tải mạng lưới từ Google Sheet…');
+  try {
+    const n = await apiGet('network');
+    S.net = n;
+    $('srvver').textContent = 'Máy chủ Apps Script phiên bản ' + n.version + '.';
+    S.regions = n.regions.concat([{ k: 'view', label: 'Khung nhìn bản đồ hiện tại', bbox: null }]);
+    $('region').innerHTML = S.regions.map(r => `<option value="${esc(r.k)}">${esc(r.label)}</option>`).join('');
+    if (!S.regionKey || !S.regions.some(r => r.k === S.regionKey)) { S.regionKey = S.regions[0].k; S.region = S.regions[0].bbox && S.regions[0].bbox.slice(); }
+    $('region').value = S.regionKey;
+    if (!S.paramsTouched) setParams(n.params);
+    const users = S.routes.filter(r => r.src === 'user');
+    S.routes = n.routes.map((r, i) => ({
+      src: 'sheet', id: r.id, name: r.name, category: r.category, status: r.status, note: r.note,
+      dflt: { enabled: r.enabled, mode: r.mode }, enabled: r.enabled, mode: r.mode,
+      peak: r.peak, off: r.off, known: r.known && !!(r.peak || r.off), userHw: false, hw: null,
+      color: /^#[0-9a-f]{6}$/i.test(r.color) ? r.color : PALETTE[i % PALETTE.length],
+      stops: r.stops, lines: r.lines.map(decodePolyline)
+    })).concat(users);
+    refreshHeadways();
+    drawRegion(); renderRoutes(); renderRouteTable(); renderMissing(); markDirty(); updateConnUi();
+    if (S.region) map.fitBounds([[S.region[0], S.region[1]], [S.region[2], S.region[3]]]);
+    log(`Mạng lưới: ${n.routes.length} tuyến, ${n.routes.reduce((a, r) => a + r.stops.length, 0)} trạm.`);
+    loadScenarioList();
+  } finally { busy(false); }
+}
+$('btnLoad').onclick = () => loadNetwork().catch(e => toast(e.message, 6000));
+function baseHw(r) { const v = $('period').value === 'off' ? (r.off || r.peak) : (r.peak || r.off); return v || (S.net ? S.net.params.defaultHeadway : 30); }
+function refreshHeadways() { S.routes.forEach(r => { if (r.src === 'sheet' && !r.userHw) r.hw = baseHw(r); }); }
+$('period').onchange = () => { refreshHeadways(); renderRouteTable(); renderMissing(); markDirty(); };
+
+$('region').onchange = () => {
+  const r = S.regions.find(x => x.k === $('region').value); S.regionKey = r.k;
+  if (r.k === 'view') { const b = map.getBounds(); S.region = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(v => +v.toFixed(5)); }
+  else { S.region = r.bbox.slice(); map.fitBounds([[r.bbox[0], r.bbox[1]], [r.bbox[2], r.bbox[3]]]); }
+  drawRegion(); markDirty();
+};
+function drawRegion() { if (regionRect) map.removeLayer(regionRect); if (S.region) regionRect = L.rectangle([[S.region[0], S.region[1]], [S.region[2], S.region[3]]], { color: '#0b6e75', weight: 1.5, dashArray: '6 5', fill: false, interactive: false }).addTo(map); }
+
+/* ---------------- Tham số ---------------- */
+const PMAP = { cell: 'pcell', walkSpeed: 'pwalk', detour: 'pdet', catchBus: 'pcb', catchRail: 'pcr', rfBus: 'prb', rfRail: 'prr', coverR: 'pcov' };
+function getParams() { const p = {}; Object.keys(PMAP).forEach(k => p[k] = parseFloat($(PMAP[k]).value)); return p; }
+function setParams(p) {
+  Object.keys(PMAP).forEach(k => {
+    if (p[k] == null) return; const el = $(PMAP[k]);
+    if (el.tagName === 'SELECT' && ![...el.options].some(o => +o.value === +p[k])) el.add(new Option(p[k], p[k]));
+    el.value = p[k];
+  });
+}
+Object.values(PMAP).forEach(id => $(id).addEventListener('change', () => { S.paramsTouched = true; markDirty(); }));
+$('btnResetP').onclick = () => { if (S.net) setParams(S.net.params); S.paramsTouched = false; markDirty(); };
+
+/* ---------------- Trạng thái ---------------- */
+function markDirty() { S.dirty = !!S.grid; updateStatus(); }
+function updateStatus() {
+  const on = S.routes.filter(r => r.enabled).length;
+  $('btnRun').disabled = !on || !API;
+  const st = $('status');
+  if (!S.routes.length) { st.textContent = API ? 'Chưa tải mạng lưới.' : 'Chưa kết nối máy chủ.'; st.classList.remove('dirty'); return; }
+  const unk = S.routes.filter(r => r.enabled && r.src === 'sheet' && !r.known && !r.userHw).length;
+  let s = `${on}/${S.routes.length} tuyến đang bật (${$('period').value === 'off' ? 'thấp điểm' : 'cao điểm'}).`;
+  if (unk) s += ` ${unk} tuyến dùng giãn cách mặc định.`;
+  if (S.dirty) s += ' Đã thay đổi — cần tính lại.';
+  st.textContent = s; st.classList.toggle('dirty', S.dirty);
+}
+
+/* ---------------- Vẽ tuyến lên bản đồ ---------------- */
+function renderRoutes() {
+  lyrRoutes.clearLayers(); lyrStops.clearLayers();
+  S.routes.forEach(r => {
+    if (!r.enabled) return;
+    const pts = r.stops.map(s => [s[0], s[1]]);
+    (r.lines && r.lines.length ? r.lines : [pts]).forEach(l => L.polyline(l, { color: r.color, weight: r.src === 'user' ? 4 : 2.5, opacity: 0.8, dashArray: r.src === 'user' ? '8 5' : null, renderer: canvasR }).bindTooltip(esc(r.name), { sticky: true }).addTo(lyrRoutes));
+    if ($('showStops').checked) r.stops.forEach(s => L.circleMarker([s[0], s[1]], { radius: 3, color: r.color, weight: 1, fillColor: s[3] ? '#ffe9a8' : '#fff', fillOpacity: 1, renderer: canvasR, interactive: false }).addTo(lyrStops));
+  });
+}
+$('showStops').onchange = renderRoutes;
+
+function renderRouteTable() {
+  const q = $('rfilter').value.trim().toLowerCase();
+  const rows = S.routes.map((r, i) => ({ r, i })).filter(x => !q || x.r.name.toLowerCase().includes(q));
+  $('rtable').querySelector('tbody').innerHTML = rows.map(({ r, i }) => {
+    const f = [];
+    if (r.src === 'sheet') { f.push(r.note || CAT[r.category] || ''); if (!r.known && !r.userHw) f.push('giãn cách chưa công bố'); if (r.userHw) f.push('đã chỉnh giãn cách'); const ni = r.stops.filter(s => s[3]).length; if (ni) f.push(ni + ' trạm nội suy'); }
+    else f.push('tuyến giả định');
+    return `<tr data-i="${i}"><td><input type="checkbox" class="ren" ${r.enabled ? 'checked' : ''}></td>
+      <td><span class="sw" style="background:${r.color}"></span><span class="rname notr" title="${esc(r.name)}">${esc(r.name)}</span><span class="flag">${esc(f.filter(Boolean).join(' · '))}</span></td>
+      <td><select class="rmode"><option value="bus" ${r.mode !== 'rail' ? 'selected' : ''}>Buýt</option><option value="rail" ${r.mode === 'rail' ? 'selected' : ''}>Ray</option></select></td>
+      <td class="num"><input type="number" class="rhw" min="1" step="1" value="${+(+r.hw).toFixed(1)}"></td>
+      <td class="num">${r.stops.length}</td>
+      <td>${r.src === 'user' ? '<button class="b s rdel" title="Xoá">✕</button>' : (r.userHw ? '<button class="b s rrst" title="Về giá trị trên Sheet">↺</button>' : '')}</td></tr>`;
+  }).join('');
+  $('rsummary').textContent = S.routes.length ? `${S.routes.length} tuyến (${S.routes.filter(r => r.enabled).length} đang bật). Chỉnh ở đây chỉ áp cho kịch bản; muốn sửa dữ liệu gốc hãy sửa trang "Tuyen" trên Google Sheet.` : 'Chưa có tuyến.';
+  updateStatus();
+}
+$('rfilter').oninput = renderRouteTable;
+$('rtable').addEventListener('change', (e) => {
+  const tr = e.target.closest('tr'); if (!tr) return; const r = S.routes[+tr.dataset.i];
+  if (e.target.classList.contains('ren')) { r.enabled = e.target.checked; renderRoutes(); }
+  if (e.target.classList.contains('rmode')) r.mode = e.target.value;
+  if (e.target.classList.contains('rhw')) { const v = parseFloat(e.target.value); if (v > 0) { r.hw = v; if (r.src === 'sheet') r.userHw = true; } }
+  markDirty(); renderRouteTable();
+});
+$('rtable').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr'); if (!tr) return; const i = +tr.dataset.i, r = S.routes[i];
+  if (e.target.classList.contains('rdel')) { S.routes.splice(i, 1); renderRoutes(); renderRouteTable(); markDirty(); return; }
+  if (e.target.classList.contains('rrst')) { r.userHw = false; r.hw = baseHw(r); renderRouteTable(); markDirty(); return; }
+  if (e.target.classList.contains('rname')) {
+    const pts = r.stops.map(s => [s[0], s[1]]); if (!pts.length) return;
+    map.fitBounds(L.latLngBounds(pts).pad(0.15));
+    if (hilite) map.removeLayer(hilite);
+    hilite = L.featureGroup((r.lines.length ? r.lines : [pts]).map(l => L.polyline(l, { color: '#000', weight: 7, opacity: 0.25, interactive: false }))).addTo(map);
+    setTimeout(() => { if (hilite) { map.removeLayer(hilite); hilite = null; } }, 3500);
+  }
+});
+$('btnAllOn').onclick = () => { S.routes.forEach(r => r.enabled = true); renderRoutes(); renderRouteTable(); markDirty(); };
+$('btnAllOff').onclick = () => { S.routes.forEach(r => r.enabled = false); renderRoutes(); renderRouteTable(); markDirty(); };
+$('btnBulkUnknown').onclick = () => { const v = parseFloat($('bulkhw').value); if (!(v > 0)) return; let n = 0; S.routes.forEach(r => { if (r.src === 'sheet' && !r.known) { r.hw = v; r.userHw = true; n++; } }); renderRouteTable(); markDirty(); toast(`Đã đặt ${v} ph cho ${n} tuyến.`); };
+$('btnBulkShown').onclick = () => { const v = parseFloat($('bulkhw').value); if (!(v > 0)) return; const q = $('rfilter').value.trim().toLowerCase(); let n = 0; S.routes.forEach(r => { if (!q || r.name.toLowerCase().includes(q)) { r.hw = v; if (r.src === 'sheet') r.userHw = true; n++; } }); renderRouteTable(); markDirty(); toast(`Đã đặt ${v} ph cho ${n} tuyến.`); };
+
+/* tuyến chưa có toạ độ */
+function renderMissing() {
+  const M = (S.net && S.net.missing) || [];
+  if (!M.length) { $('dnMissing').innerHTML = ''; return; }
+  $('dnMissing').innerHTML = `<div class="warn" style="margin-top:12px">${M.length} tuyến chưa có toạ độ trạm nên chưa được tính. Có thể vẽ bổ sung theo lộ trình công bố:</div>
+    <table>${M.map((e, i) => `<tr><td><span class="notr"><b>${esc(e.id)}</b> ${esc(e.name.replace(/^[^–]*–\s*/, ''))}</span><span class="flag" style="color:var(--muted)">${e.peak ? e.peak + '/' + (e.off || e.peak) + ' ph' : 'chưa rõ giãn cách'}</span></td><td><button class="b s dnDraw" data-i="${i}">Vẽ</button></td></tr>`).join('')}</table>`;
+}
+$('dnMissing').addEventListener('click', (ev) => {
+  const b = ev.target.closest('.dnDraw'); if (!b) return; const e = S.net.missing[+b.dataset.i];
+  startDraw({ name: e.name, headway: ($('period').value === 'off' ? (e.off || e.peak) : (e.peak || e.off)) || 30, path: e.path });
+});
+
+/* ---------------- Vẽ tuyến giả định ---------------- */
+function startDraw(o) {
+  o = o || {};
+  S.draw = { pts: [] }; $('drawpanel').style.display = 'block';
+  $('dname').value = o.name || ((I18N.lang === 'en' ? 'Scenario route ' : 'Tuyến giả định ') + (S.routes.filter(r => r.src === 'user').length + 1));
+  if (o.headway) $('dhw').value = o.headway;
+  $('dpath').style.display = o.path ? 'block' : 'none'; $('dpath').textContent = o.path ? 'Lộ trình công bố: ' + o.path : '';
+  if (o.path) $('dauto').checked = true;
+  map.getContainer().style.cursor = 'crosshair'; updateDraft();
+}
+$('btnDraw').onclick = () => startDraw();
+function draftStops() {
+  const d = S.draw; if (!d) return [];
+  if ($('dauto').checked && d.pts.length > 1) return resample(d.pts, Math.max(100, parseFloat($('dstep').value) || 400)).concat([d.pts[d.pts.length - 1]]).filter((p, i, a) => i === 0 || distM(p[0], p[1], a[i - 1][0], a[i - 1][1]) > 50);
+  return d.pts.slice();
+}
+function updateDraft() {
+  lyrDraw.clearLayers(); const d = S.draw; if (!d) return;
+  if (d.pts.length > 1) L.polyline(d.pts, { color: '#111', weight: 3, dashArray: '6 5' }).addTo(lyrDraw);
+  const st = draftStops(); st.forEach(p => L.circleMarker(p, { radius: 5, color: '#111', weight: 2, fillColor: '#ffd23f', fillOpacity: 1 }).addTo(lyrDraw));
+  let len = 0; for (let i = 1; i < d.pts.length; i++) len += distM(d.pts[i - 1][0], d.pts[i - 1][1], d.pts[i][0], d.pts[i][1]);
+  $('dinfo').textContent = `${st.length} điểm dừng · ${fmt(len / 1000, 2)} km`;
+}
+['dauto', 'dstep'].forEach(id => $(id).addEventListener('input', updateDraft));
+function endDraw() { S.draw = null; $('drawpanel').style.display = 'none'; lyrDraw.clearLayers(); map.getContainer().style.cursor = ''; }
+$('dundo').onclick = () => { if (S.draw) { S.draw.pts.pop(); updateDraft(); } };
+$('dcancel').onclick = endDraw;
+$('dsave').onclick = () => {
+  const st = draftStops(); if (st.length < 2) { toast('Cần ít nhất 2 điểm dừng.'); return; }
+  const hw = parseFloat($('dhw').value) || 10;
+  S.routes.push({ src: 'user', id: 'u' + Date.now(), name: $('dname').value || 'Tuyến giả định', mode: $('dmode').value, enabled: true, hw, color: '#111111',
+    stops: st.map(p => [+p[0].toFixed(6), +p[1].toFixed(6), '', 0]), lines: [S.draw.pts.map(p => [+p[0].toFixed(6), +p[1].toFixed(6)])] });
+  endDraw(); renderRoutes(); renderRouteTable(); markDirty();
+  toast('Đã thêm tuyến giả định. Bấm Tính PTAL để cập nhật.');
+};
+
+/* ---------------- Kịch bản gửi lên máy chủ ---------------- */
+function currentRegion() {
+  if (S.regionKey === 'view') { const b = map.getBounds(); S.region = [b.getSouth(), b.getWest(), b.getNorth(), b.getEast()].map(v => +v.toFixed(5)); drawRegion(); }
+  return S.region;
+}
+function scenario() {
+  const overrides = {}, extra = [];
+  S.routes.forEach(r => {
+    if (r.src === 'user') { extra.push({ name: r.name, mode: r.mode, headway: r.hw, enabled: r.enabled, stops: r.stops.map(s => [s[0], s[1]]), line: r.lines[0] }); return; }
+    const o = {};
+    if (r.enabled !== r.dflt.enabled) o.enabled = r.enabled;
+    if (r.mode !== r.dflt.mode) o.mode = r.mode;
+    if (r.userHw) o.headway = r.hw;
+    if (Object.keys(o).length) overrides[r.id] = o;
+  });
+  return { period: $('period').value, region: currentRegion(), params: getParams(), overrides, extra };
+}
+function applyScenario(sc) {
+  if (!sc) return;
+  if (sc.period) $('period').value = sc.period;
+  if (sc.params) { setParams(sc.params); S.paramsTouched = true; }
+  if (sc.region) { S.regionKey = 'view'; S.region = sc.region; $('region').value = 'view'; drawRegion(); }
+  S.routes = S.routes.filter(r => r.src === 'sheet');
+  S.routes.forEach(r => { const o = (sc.overrides || {})[r.id] || {}; r.enabled = o.enabled != null ? o.enabled : r.dflt.enabled; r.mode = o.mode || r.dflt.mode; r.userHw = !!o.headway; r.hw = o.headway || baseHw(r); });
+  (sc.extra || []).forEach((x, i) => S.routes.push({ src: 'user', id: 'u' + Date.now() + i, name: x.name, mode: x.mode || 'bus', enabled: x.enabled !== false, hw: x.headway || 10, color: '#111111', stops: x.stops.map(s => [s[0], s[1], '', 0]), lines: [x.line || x.stops] }));
+  refreshHeadways(); renderRoutes(); renderRouteTable(); markDirty();
+}
+
+/* ---------------- Tính PTAL (máy chủ) ---------------- */
+async function run() {
+  if (!S.routes.some(r => r.enabled)) return;
+  busy(true, 'Máy chủ đang tính PTAL…');
+  try {
+    const t = performance.now();
+    const res = await apiPost(Object.assign({ action: 'compute' }, scenario()));
+    S.grid = await decodeGrid(res);
+    S.stats = res.stats; S.dirty = false;
+    renderOverlay(); renderResults(); updateStatus(); refreshPoiStats();
+    log(`Máy chủ tính ${(res.grid.ncol * res.grid.nrow).toLocaleString(I18N.locale())} ô (${res.grid.cell} m) trong ${res.ms} ms; tổng thời gian ${Math.round(performance.now() - t)} ms; dữ liệu ${fmt(res.data.length / 1024, 0)} KB.`);
+    showTab('result');
+  } catch (e) { toast('Lỗi tính toán: ' + e.message, 7000); log('Lỗi: ' + e.message); }
+  finally { busy(false); }
+}
+$('btnRun').onclick = run;
+
+/* ---------------- Lớp kết quả ---------------- */
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const BCOL = BANDS.map(b => hex(b.color));
+const merc = lat => Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
+const imerc = y => (2 * Math.atan(Math.exp(y)) - Math.PI / 2) * 180 / Math.PI;
+const inRegion = (lat, lng) => { const r = S.region; return !r || (lat >= r[0] && lat <= r[2] && lng >= r[1] && lng <= r[3]); };
+function renderOverlay() {
+  if (overlay) { map.removeLayer(overlay); overlay = null; }
+  const g = S.grid; if (!g) return;
+  const W = g.ncol, H = g.nrow, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d'), img = ctx.createImageData(W, H), D = img.data;
+  const latS = g.lat0, latN = g.lat0 + H * g.dLat, yS = merc(latS), yN = merc(latN), show0 = $('show0').checked, view = S.view;
+  for (let r = 0; r < H; r++) {
+    const lat = imerc(yN - (r + 0.5) * (yN - yS) / H), j = Math.floor((lat - g.lat0) / g.dLat); if (j < 0 || j >= H) continue;
+    for (let i = 0; i < W; i++) {
+      const k = j * W + i, a = g.ai[k], o = (r * W + i) * 4; let col = null, alpha = 255;
+      if (view === 'ptal') { const b = bandIndex(a); if (b > 0) col = BCOL[b]; else if (show0 && inRegion(lat, g.lng0 + (i + 0.5) * g.dLng)) col = BCOL[0]; }
+      else if (view === 'cover') { const b = bandIndex(a), cov = g.cover[k]; if (cov && b <= 2) col = [123, 31, 162]; else if (cov) col = [102, 187, 106]; else if (b >= 3) col = [66, 165, 245]; else if (b > 0) col = [190, 190, 190]; }
+      else if (view === 'diff' && S.base) {
+        const c = cellCenter(g, k), kb = cellAt(S.base, c[0], c[1]), d = a - (kb >= 0 ? S.base.ai[kb] : 0);
+        if (Math.abs(d) >= 0.05) { const t = Math.min(1, Math.abs(d) / 4); col = d > 0 ? [Math.round(220 - 190 * t), Math.round(240 - 110 * t), Math.round(220 - 190 * t)] : [Math.round(250 - 70 * t), Math.round(215 - 185 * t), Math.round(210 - 180 * t)]; alpha = Math.round(120 + 135 * t); }
+      }
+      if (col) { D[o] = col[0]; D[o + 1] = col[1]; D[o + 2] = col[2]; D[o + 3] = alpha; }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  overlay = L.imageOverlay(cv.toDataURL(), [[latS, g.lng0], [latN, g.lng0 + W * g.dLng]], { opacity: +$('opac').value, className: 'px', interactive: false }).addTo(map);
+  overlay.bringToBack(); renderLegend();
+}
+function renderLegend() {
+  const el = $('legend'); el.style.display = S.grid ? 'block' : 'none'; if (!S.grid) return;
+  if (S.view === 'ptal') el.innerHTML = '<b>Mức PTAL</b>' + BANDS.slice().reverse().map(b => `<div><i style="background:${b.color}"></i>${b.label}</div>`).join('');
+  else if (S.view === 'cover') el.innerHTML = `<b>Vùng phủ ${esc($('pcov').value)} m vs PTAL</b><div><i style="background:#7b1fa2"></i>Trong vùng phủ nhưng PTAL ≤ 1b</div><div><i style="background:#66bb6a"></i>Trong vùng phủ, PTAL ≥ 2</div><div><i style="background:#42a5f5"></i>Ngoài vùng phủ nhưng PTAL ≥ 2</div><div><i style="background:#bebebe"></i>Ngoài vùng phủ, PTAL ≤ 1b</div>`;
+  else el.innerHTML = `<b>Chênh lệch AI so với gốc</b><div><i style="background:#1e823c"></i>Tăng (≥ +4)</div><div><i style="background:#c8eac8"></i>Tăng ít</div><div><i style="background:#f5c8c0"></i>Giảm ít</div><div><i style="background:#b41e1e"></i>Giảm (≤ −4)</div>`;
+}
+document.querySelectorAll('#viewseg button').forEach(b => b.onclick = () => {
+  if (b.dataset.v === 'diff' && !S.base) { toast('Lưu kịch bản gốc trước, rồi thay đổi tuyến và tính lại.'); return; }
+  S.view = b.dataset.v; document.querySelectorAll('#viewseg button').forEach(x => x.classList.toggle('on', x === b)); renderOverlay();
+});
+$('opac').oninput = () => overlay && overlay.setOpacity(+$('opac').value);
+$('show0').onchange = renderOverlay;
+
+const areaOf = (st, idx) => idx.reduce((a, b) => a + st.cnt[b], 0) * st.cellKm2;
+function renderResults() {
+  const st = S.stats; if (!st) return;
+  $('noresult').style.display = 'none'; $('resbody').style.display = 'block';
+  const A = st.n * st.cellKm2, good = areaOf(st, [3, 4, 5, 6, 7, 8]);
+  $('cArea').textContent = fmt(A, 1); $('cMean').textContent = fmt(st.meanAI, 2);
+  $('cGood').textContent = fmt(good, 1) + ' km² · ' + fmt(100 * good / A, 1) + '%';
+  $('cZero').textContent = fmt(100 * st.cnt[0] / st.n, 1) + '%';
+  const max = Math.max.apply(null, st.cnt.slice(1)) || 1;
+  $('chart').innerHTML = '<table><thead><tr><th>Mức</th><th></th><th class="num">km²</th><th class="num">%</th></tr></thead><tbody>' + BANDS.map((b, i) => `<tr><td><span class="sw" style="background:${b.color}"></span>${b.k}</td><td>${i ? `<span class="bar" style="width:${Math.max(1, Math.round(130 * st.cnt[i] / max))}px;background:${b.color}"></span>` : '<span class="hint" style="margin:0">ngoài tầm đi bộ</span>'}</td><td class="num">${fmt(st.cnt[i] * st.cellKm2, 2)}</td><td class="num">${fmt(100 * st.cnt[i] / st.n, 1)}</td></tr>`).join('') + '</tbody></table>';
+  const covN = st.cov.reduce((a, b) => a + b, 0), covLow = st.cov[0] + st.cov[1] + st.cov[2];
+  $('covtxt').innerHTML = covN ? `Diện tích nằm trong ${esc($('pcov').value)} m quanh điểm dừng: <b>${fmt(covN * st.cellKm2, 1)} km²</b> (${fmt(100 * covN / st.n, 1)}% vùng nghiên cứu). Trong đó <b>${fmt(100 * covLow / covN, 1)}%</b> vẫn có PTAL ≤ 1b, tức là được "phủ" nhưng tần suất quá thấp để coi là có dịch vụ. Xem lớp <i>Vùng phủ vs PTAL</i>.` : 'Không có điểm dừng nào trong vùng nghiên cứu.';
+  if (S.base && S.baseStats) {
+    const b = S.baseStats, gb = areaOf(b, [3, 4, 5, 6, 7, 8]), zb = b.cnt[0] * b.cellKm2, zn = st.cnt[0] * st.cellKm2;
+    $('difftxt').innerHTML = `<table><tr><th></th><th class="num">Gốc</th><th class="num">Hiện tại</th><th class="num">Δ</th></tr><tr><td>AI trung bình</td><td class="num">${fmt(b.meanAI, 2)}</td><td class="num">${fmt(st.meanAI, 2)}</td><td class="num">${fmt(st.meanAI - b.meanAI, 2)}</td></tr><tr><td>PTAL ≥ 2 (km²)</td><td class="num">${fmt(gb, 1)}</td><td class="num">${fmt(good, 1)}</td><td class="num">${fmt(good - gb, 1)}</td></tr><tr><td>PTAL 0 (km²)</td><td class="num">${fmt(zb, 1)}</td><td class="num">${fmt(zn, 1)}</td><td class="num">${fmt(zn - zb, 1)}</td></tr></table><p class="hint">Chọn lớp <i>Chênh lệch kịch bản</i> để xem trên bản đồ.</p>`;
+  }
+}
+$('btnBase').onclick = () => {
+  if (!S.grid) return; if (S.dirty) { toast('Dữ liệu đã thay đổi — tính lại trước khi lưu làm gốc.'); return; }
+  S.base = S.grid; S.baseStats = S.stats;
+  $('difftxt').innerHTML = 'Đã lưu kịch bản gốc. Hãy thay đổi tuyến/giãn cách hoặc vẽ tuyến giả định, rồi bấm <b>Tính PTAL</b>.'; toast('Đã lưu kịch bản gốc.');
+};
+
+/* ---------------- Nhấp bản đồ: chi tiết tính tại điểm (máy chủ) ---------------- */
+map.on('click', async (e) => {
+  if (S.draw) { S.draw.pts.push([e.latlng.lat, e.latlng.lng]); updateDraft(); return; }
+  if (!S.grid) return;
+  const pop = L.popup({ maxWidth: 380 }).setLatLng(e.latlng).setContent('<div class="pp hint">Đang tính tại điểm…</div>').openOn(map);
+  try {
+    const sc = scenario(); delete sc.region;
+    const res = await apiPost(Object.assign({ action: 'at', lat: e.latlng.lat, lng: e.latlng.lng }, sc));
+    const b = BANDS.find(x => x.k === res.band);
+    let h = `<div class="pp"><h4><span class="pill" style="background:${b.color}">PTAL ${b.k}</span> AI = ${fmt(res.ai, 2)}</h4>`;
+    if (S.dirty) h += '<div class="warn" style="margin:4px 0">Lớp màu là kết quả cũ; bảng dưới tính theo kịch bản hiện tại.</div>';
+    if (!res.rows.length) h += '<p class="hint">Không có điểm dừng nào trong tầm đi bộ.</p>';
+    else {
+      h += '<table><tr><th>Tuyến</th><th class="num">Đi bộ m</th><th class="num">ch/h</th><th class="num">TAT ph</th><th class="num">EDF</th><th class="num">×</th></tr>' + res.rows.slice(0, 14).map(r => `<tr><td class="notr" title="${esc(r.stop)}">${esc(r.route.length > 26 ? r.route.slice(0, 25) + '…' : r.route)}</td><td class="num">${fmt(r.walk, 0)}</td><td class="num">${fmt(r.f, 1)}</td><td class="num">${fmt(r.tat, 1)}</td><td class="num">${fmt(r.edf, 2)}</td><td class="num">${r.weight === 1 ? '1' : fmt(0.5, 1)}</td></tr>`).join('') + '</table>';
+      if (res.rows.length > 14) h += `<p class="hint">… và ${res.rows.length - 14} tuyến khác.</p>`;
+      h += '<p class="hint" style="margin-top:4px">TAT = đi bộ + 0,5×60/f + hệ số tin cậy; EDF = 30/TAT.</p>';
+    }
+    pop.setContent(h + '</div>');
+  } catch (err) { pop.setContent('<div class="pp warn">' + esc(err.message) + '</div>'); }
+});
+
+/* ---------------- Tiện ích ---------------- */
+$('btnPoi').onclick = async () => {
+  busy(true, 'Đang tải tiện ích…');
+  try { const r = await apiGet('pois'); S.pois = r.pois.filter(p => inRegion(p.lat, p.lng)); refreshPoiStats(); toast(S.pois.length ? `Đã tải ${S.pois.length} tiện ích.` : 'Trang "TienIch" trên Sheet đang trống — dùng menu PTAL → Nhập tiện ích.', 5000); }
+  catch (e) { toast(e.message, 6000); } finally { busy(false); }
+};
+$('showPoi').onchange = () => refreshPoiStats();
+function refreshPoiStats() {
+  lyrPoi.clearLayers(); if (!S.pois.length) { $('poires').innerHTML = ''; return; }
+  const g = S.grid, groups = {};
+  S.pois.forEach(p => {
+    const k = g ? cellAt(g, p.lat, p.lng) : -1, ai = k >= 0 ? g.ai[k] : 0, b = bandIndex(ai);
+    const G = groups[p.cat] = groups[p.cat] || { n: 0, z: 0, low: 0, mid: 0, hi: 0 };
+    G.n++; if (b === 0) G.z++; else if (b <= 2) G.low++; else if (b <= 4) G.mid++; else G.hi++;
+    if ($('showPoi').checked) L.circleMarker([p.lat, p.lng], { radius: 5, color: '#222', weight: 1.2, fillColor: BANDS[b].color, fillOpacity: 1, renderer: canvasR }).bindTooltip(`${esc(p.name)}<br>${esc(POI_LABEL[p.cat] || p.cat)} · PTAL ${BANDS[b].k} (AI ${fmt(ai, 1)})`).addTo(lyrPoi);
+  });
+  const pct = (a, n) => fmt(100 * a / n, 0) + '%';
+  $('poires').innerHTML = g ? '<table id="poitable"><thead><tr><th>Loại</th><th class="num">Số</th><th class="num">PTAL 0</th><th class="num">1a–1b</th><th class="num">2–3</th><th class="num">≥ 4</th></tr></thead><tbody>' + Object.keys(groups).map(c => { const G = groups[c]; return `<tr><td>${esc(POI_LABEL[c] || c)}</td><td class="num">${G.n}</td><td class="num">${pct(G.z, G.n)}</td><td class="num">${pct(G.low, G.n)}</td><td class="num">${pct(G.mid, G.n)}</td><td class="num">${pct(G.hi, G.n)}</td></tr>`; }).join('') + '</tbody></table><p class="hint">Mức PTAL tại vị trí tiện ích.</p>' : '<p class="hint">Tính PTAL để xem mức tiếp cận của các tiện ích.</p>';
+}
+
+/* ---------------- Kịch bản trên Sheet ---------------- */
+function adminKey() { return $('adminKey').value.trim(); }
+$('adminKey').value = store.get('ptal_key') || '';
+$('rememberKey').checked = !!store.get('ptal_key');
+$('rememberKey').onchange = () => store.set('ptal_key', $('rememberKey').checked ? adminKey() : null);
+$('adminKey').onchange = () => { if ($('rememberKey').checked) store.set('ptal_key', adminKey()); };
+async function loadScenarioList() {
+  try { const r = await apiGet('scenarios'); $('scenList').innerHTML = '<option value="">— Kịch bản đã lưu trên Sheet —</option>' + r.scenarios.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join(''); }
+  catch (e) { log('Không đọc được danh sách kịch bản: ' + e.message); }
+}
+$('btnScenLoad').onclick = async () => {
+  const n = $('scenList').value; if (!n) return;
+  busy(true, 'Đang mở kịch bản…');
+  try { const r = await apiGet('scenario', { name: n }); applyScenario(r.data); $('scenName').value = n; toast('Đã mở kịch bản "' + n + '". Bấm Tính PTAL.'); }
+  catch (e) { toast(e.message, 6000); } finally { busy(false); }
+};
+$('btnScenSave').onclick = async () => {
+  const n = $('scenName').value.trim(); if (!n) { toast('Nhập tên kịch bản.'); return; }
+  if (!adminKey()) { toast('Nhập khoá quản trị ở tab Quản trị.'); showTab('admin'); return; }
+  busy(true, 'Đang lưu kịch bản…');
+  try { const r = await apiPost({ action: 'saveScenario', key: adminKey(), name: n, data: scenario() }); toast((r.updated ? 'Đã cập nhật' : 'Đã lưu') + ' kịch bản "' + n + '".'); loadScenarioList(); }
+  catch (e) { toast(e.message, 6000); } finally { busy(false); }
+};
+$('btnScenDel').onclick = async () => {
+  const n = $('scenList').value || $('scenName').value.trim(); if (!n) return;
+  if (!adminKey()) { toast('Nhập khoá quản trị ở tab Quản trị.'); showTab('admin'); return; }
+  busy(true, 'Đang xoá…');
+  try { await apiPost({ action: 'deleteScenario', key: adminKey(), name: n }); toast('Đã xoá "' + n + '".'); loadScenarioList(); }
+  catch (e) { toast(e.message, 6000); } finally { busy(false); }
+};
+$('fScen').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { applyScenario(JSON.parse(await f.text())); toast('Đã nạp kịch bản từ tệp.'); } catch (err) { toast('Tệp không hợp lệ.'); } e.target.value = ''; };
+
+/* ---------------- Nhập GTFS (máy chủ) ---------------- */
+$('btnGtfs').onclick = async () => {
+  const f = $('fGtfs').files[0]; if (!f) { toast('Chọn tệp GTFS (.zip).'); return; }
+  if (!adminKey()) { toast('Nhập khoá quản trị.'); return; }
+  if (f.size > 20e6) { toast('Tệp quá lớn (tối đa ~20 MB qua Apps Script).'); return; }
+  busy(true, 'Đang tải GTFS lên máy chủ…');
+  try {
+    const b64 = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(f); });
+    const r = await apiPost({ action: 'importGtfs', key: adminKey(), zip: b64, start: $('tStart').value, end: $('tEnd').value, weekday: +$('wday').value });
+    toast(`Đã nhập ${r.routes} tuyến vào Google Sheet.`, 5000);
+    S.routes = S.routes.filter(x => x.src === 'user'); await loadNetwork();
+  } catch (e) { toast('Lỗi nhập GTFS: ' + e.message, 8000); } finally { busy(false); }
+};
+
+/* ---------------- Xuất ---------------- */
+const stamp = () => new Date().toISOString().slice(0, 16).replace(/[:T]/g, '');
+$('exGeo').onclick = () => {
+  const g = S.grid; if (!g) return; const feats = [], r6 = v => +v.toFixed(6);
+  for (let k = 0; k < g.ai.length; k++) if (g.ai[k] > 0) {
+    const j = Math.floor(k / g.ncol), i = k - j * g.ncol, a = g.lat0 + j * g.dLat, b = g.lng0 + i * g.dLng, c = a + g.dLat, d = b + g.dLng;
+    feats.push({ type: 'Feature', properties: { ai: +g.ai[k].toFixed(2), ptal: BANDS[bandIndex(g.ai[k])].k, cover: g.cover[k] }, geometry: { type: 'Polygon', coordinates: [[[r6(b), r6(a)], [r6(d), r6(a)], [r6(d), r6(c)], [r6(b), r6(c)], [r6(b), r6(a)]]] } });
+  }
+  download(`ptal_danang_${g.cell}m_${stamp()}.geojson`, JSON.stringify({ type: 'FeatureCollection', features: feats }), 'application/geo+json');
+};
+$('exCsv').onclick = () => {
+  const g = S.grid; if (!g) return; const L1 = ['lat,lng,ai,ptal,trong_vung_phu'];
+  for (let k = 0; k < g.ai.length; k++) if (g.ai[k] > 0) { const c = cellCenter(g, k); L1.push(`${c[0].toFixed(6)},${c[1].toFixed(6)},${g.ai[k].toFixed(2)},${BANDS[bandIndex(g.ai[k])].k},${g.cover[k]}`); }
+  download(`ptal_danang_${g.cell}m_${stamp()}.csv`, '﻿' + L1.join('\n'), 'text/csv');
+};
+function statsCsv(sep) {
+  const st = S.stats; if (!st) return '';
+  const rows = [['Muc PTAL', 'Dien tich (km2)', 'Ty le (%)', 'Trong vung phu (km2)']];
+  BANDS.forEach((b, i) => rows.push([b.k, (st.cnt[i] * st.cellKm2).toFixed(3), (100 * st.cnt[i] / st.n).toFixed(2), (st.cov[i] * st.cellKm2).toFixed(3)]));
+  rows.push(['Tong', (st.n * st.cellKm2).toFixed(3), '100', (st.cov.reduce((a, b) => a + b, 0) * st.cellKm2).toFixed(3)]);
+  rows.push(['AI trung binh', st.meanAI.toFixed(3), '', '']);
+  return rows.map(r => r.join(sep)).join('\n');
+}
+$('exStat').onclick = () => download(`thong_ke_ptal_${stamp()}.csv`, '﻿' + statsCsv(','), 'text/csv');
+$('exCopy').onclick = () => copyText(statsCsv('\t'));
+$('exScen').onclick = () => download(`kich_ban_ptal_${stamp()}.json`, JSON.stringify(scenario()), 'application/json');
+
+/* ---------------- Khởi động ---------------- */
+I18N.onChange = () => { renderRouteTable(); renderMissing(); updateConnUi(); if (S.stats) renderResults(); renderLegend(); refreshPoiStats(); if (S.draw) updateDraft(); };
+updateConnUi(); updateStatus();
+if (API) connect(API);
+window.__PTAL = S; window.__PTAL_click = (lat, lng) => { map.fire('click', { latlng: L.latLng(lat, lng) }); };
+})();
+
+</script>
+</body>
+</html>
